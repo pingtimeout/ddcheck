@@ -7,6 +7,12 @@ UPLOAD_DIRECTORY.mkdir(parents=True, exist_ok=True)
 
 
 def save_uploaded_file(uploaded_file):
+    """
+    Save the uploaded file to a unique filename in the uploads directory.
+
+    :param uploaded_file: Uploaded file object
+    :return: Path to the saved file
+    """
     random_filename = f"{uuid.uuid4()}.tar.gz"
     file_path = UPLOAD_DIRECTORY / random_filename
 
