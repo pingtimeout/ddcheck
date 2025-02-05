@@ -3,7 +3,7 @@ import streamlit as st
 
 def main():
     st.title("DDCheck")
-    st.write("Welcome to DDCheck - Dremio Diagnostics Analysis Tool")
+    st.subheader("Dremio Diagnostics Tarball Analysis Tool")
     # Main navigation or welcome screen content here
 
 
