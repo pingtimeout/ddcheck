@@ -22,5 +22,3 @@ pre-commit = "^4.1.0"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry.scripts]
-ddcheck = "ddcheck.ddcheck:main"
