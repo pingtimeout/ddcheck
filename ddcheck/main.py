@@ -8,6 +8,7 @@ st.set_page_config(initial_sidebar_state="collapsed")
 pg = st.navigation(
     [
         st.Page("main.py", title="Upload", icon="📤"),
+        st.Page("pages/analysis.py", title="Analysis", icon="🔍"),
     ]
 )
 
@@ -42,7 +43,7 @@ if existing_tarballs:
     table_data = sorted(
         [
             {
-                "DDCheck ID": f"pages/analysis.py?ddcheck_id={metadata.ddcheck_id}",
+                "DDCheck ID": f"analysis?ddcheck_id={metadata.ddcheck_id}",
                 "Original Filename": metadata.original_filename,
                 "Upload Time (UTC)": metadata.upload_time.isoformat(),
             }
