@@ -14,6 +14,7 @@ st.write(
     "Upload a Dremio Diagnostics Tarball (.tar.gz) below. "
     "Only tarballs generated with Dremio Diagnostics Collector v3.3.1 or earlier are supported."
 )
+
 uploaded_file = st.file_uploader(
     "Choose a diagnostics tarball",
     type=["tar.gz", "gz", "application/gzip", "application/x-gzip"],
@@ -22,10 +23,9 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file is not None:
     # Save the uploaded file and switch to the analysis page
-    file_path = save_uploaded_file(uploaded_file)
-    st.success(f"File uploaded successfully to {file_path}")
-    st.session_state.uploaded_file_path = str(file_path)
-    st.switch_page("pages/analysis.py")
+    metadata = save_uploaded_file(uploaded_file)
+    st.success(f"File uploaded successfully as {metadata.ddcheck_id}")
+    st.switch_page(f"pages/analysis.py?ddcheck_id={metadata.ddcheck_id}")
 
 # Separator between upload and selection
 st.divider()

@@ -34,7 +34,7 @@ UPLOAD_DIRECTORY.mkdir(parents=True, exist_ok=True)
 EXTRACT_DIRECTORY.mkdir(parents=True, exist_ok=True)
 
 
-def save_uploaded_file(uploaded_file):
+def save_uploaded_file(uploaded_file) -> DdcheckMetadata:
     """
     Extract the uploaded tarball and save metadata.
 
@@ -70,7 +70,7 @@ def save_uploaded_file(uploaded_file):
     # Clean up temporary tarball
     temp_tarball.unlink()
 
-    return extract_path
+    return metadata
 
 
 def get_all_metadata() -> list[DdcheckMetadata]:
