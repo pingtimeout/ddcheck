@@ -1,7 +1,11 @@
 import streamlit as st
+
 from ddcheck.utils.file_handling import save_uploaded_file
 
+
 def show():
+    st.title("DDCheck")
+    st.subheader("Dremio Diagnostics Tarball Analysis Tool")
     st.header("Upload Diagnostics")
     st.write(
         "Upload a Dremio Diagnostics Tarball (.tar.gz) below. "
@@ -19,3 +23,7 @@ def show():
         st.success(f"File uploaded successfully to {file_path}")
         # Store the file path in session state for other pages to access
         st.session_state.uploaded_file_path = str(file_path)
+        # Show the Analysis link in sidebar
+        st.sidebar.page_link("pages/_analysis.py", label="Analysis")
+        # Redirect to analysis page
+        st.switch_page("pages/_analysis.py")
