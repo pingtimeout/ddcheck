@@ -38,7 +38,7 @@ if existing_tarballs:
     table_data = sorted(
         [
             {
-                "DDCheck ID": metadata.ddcheck_id,
+                "DDCheck ID": f"[{metadata.ddcheck_id}](pages/analysis.py?ddcheck_id={metadata.ddcheck_id})",
                 "Original Filename": metadata.original_filename,
                 "Upload Time (UTC)": metadata.upload_time.isoformat(),
             }
