@@ -45,24 +45,14 @@ if existing_tarballs:
             for metadata in existing_tarballs
         ],
         key=lambda x: x["Upload Time (UTC)"],
-        reverse=True
+        reverse=True,
     )
 
     # Create a dataframe for the table
-    df_selection = st.dataframe(
+    st.dataframe(
         table_data,
-        column_config={
-            "Original Filename": st.column_config.TextColumn("Original Filename"),
-            "Upload Time (UTC)": st.column_config.TextColumn("Upload Time (UTC)"),
-            "DDCheck ID": st.column_config.TextColumn("DDCheck ID"),
-        },
         hide_index=True,
         use_container_width=True,
-        on_click=lambda row: (
-            setattr(st.session_state, 'uploaded_file_path', 
-                next(m.extract_path for m in existing_tarballs if m.ddcheck_id == row['DDCheck ID']))
-            and st.switch_page("pages/analysis.py")
-        )
     )
 
 else:
