@@ -26,7 +26,8 @@ if uploaded_file is not None:
     # Save the uploaded file and switch to the analysis page
     metadata = save_uploaded_file(uploaded_file)
     st.success(f"File uploaded successfully as {metadata.ddcheck_id}")
-    st.switch_page(f"pages/analysis.py?ddcheck_id={metadata.ddcheck_id}")
+    st.session_state["ddcheck_id"] = metadata.ddcheck_id
+    st.switch_page("pages/analysis.py")
 
 # Separator between upload and selection
 st.divider()
