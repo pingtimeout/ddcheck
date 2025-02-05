@@ -28,3 +28,6 @@ Let's do the same with this new code.  Tell me how I should update it so that
 * The main landing page should be the upload page.  The two pages should be merged together so that they are consistent in style and user instructions
 * Once a file is uploaded, the user should be redirected to the analysis page.  An element with name "Analysis" should be added to the navigation bar and the navigation bar should become visible.
 ____
+
+=== MacOS file upload issue
+https://github.com/copilot/c/40224660-58f6-470c-8896-35843a9d3e45
