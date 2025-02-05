@@ -1,0 +1,9 @@
+[[pages]]
+path = "main.py"
+name = "Upload"
+icon = "📁"
+
+[[pages]]
+path = "pages/analysis.py"
+name = "Analysis"
+icon = "💡"

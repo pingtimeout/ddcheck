@@ -1,8 +1,12 @@
 import streamlit as st
+from st_pages import get_nav_from_toml, hide_pages
 
 from ddcheck.utils.file_handling import save_uploaded_file
 
-st.set_page_config(page_title="DDCheck", initial_sidebar_state="collapsed")
+st.set_page_config(initial_sidebar_state="collapsed")
+
+nav = get_nav_from_toml()
+pg = st.navigation(nav)
 
 st.title("DDCheck")
 st.subheader("Dremio Diagnostics Tarball Analysis Tool")
@@ -23,4 +27,6 @@ if uploaded_file is not None:
     # Store the file path in session state for other pages to access
     st.session_state.uploaded_file_path = str(file_path)
     # Redirect to analysis page
-    st.switch_page("pages/_Analysis.py")
+    st.switch_page("pages/analysis.py")
+else:
+    hide_pages(["Analysis"])
