@@ -1,5 +1,6 @@
 import streamlit as st
 from st_pages import get_nav_from_toml, hide_pages
+from st_pages.core.column_config import LinkColumn
 
 from ddcheck.utils.file_handling import get_all_metadata, save_uploaded_file
 
@@ -38,7 +39,7 @@ if existing_tarballs:
     table_data = sorted(
         [
             {
-                "DDCheck ID": f"[{metadata.ddcheck_id}](pages/analysis.py?ddcheck_id={metadata.ddcheck_id})",
+                "DDCheck ID": f"http://localhost:8501/pages/analysis.py?ddcheck_id={metadata.ddcheck_id}",
                 "Original Filename": metadata.original_filename,
                 "Upload Time (UTC)": metadata.upload_time.isoformat(),
             }
@@ -53,6 +54,14 @@ if existing_tarballs:
         table_data,
         hide_index=True,
         use_container_width=True,
+        column_config={
+            "DDCheck ID": LinkColumn(
+                "DDCheck ID",
+                display_text=lambda x: x.split("=")[
+                    -1
+                ],  # Extract just the ID from the URL
+            )
+        },
     )
 
 else:
