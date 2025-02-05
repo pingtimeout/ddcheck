@@ -39,7 +39,7 @@ if existing_tarballs:
     table_data = sorted(
         [
             {
-                "DDCheck ID": f"http://localhost:8501/pages/analysis.py?ddcheck_id={metadata.ddcheck_id}",
+                "DDCheck ID": f"pages/analysis.py?ddcheck_id={metadata.ddcheck_id}",
                 "Original Filename": metadata.original_filename,
                 "Upload Time (UTC)": metadata.upload_time.isoformat(),
             }
@@ -57,7 +57,7 @@ if existing_tarballs:
         column_config={
             "DDCheck ID": LinkColumn(
                 "DDCheck ID",
-                display_text=r"http://.*ddcheck_id=(.*)",
+                display_text=r".*ddcheck_id=(.*)",
             )
         },
     )
