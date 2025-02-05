@@ -7,6 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.13"
+streamlit = "^1.42.0"
 
 [tool.isort]
 profile = "black"
@@ -20,3 +21,6 @@ pre-commit = "^4.1.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+ddcheck = "ddcheck:main"
