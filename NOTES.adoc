@@ -1,12 +1,30 @@
 = Hackathon notes
-== MLX Server
+== TODO list
+* [ ] Upload a tarball
+* [ ] Store the tarball metadata into a file
+* [ ] List all the uploaded tarballs in the first screen to avoid re-uploading existing ones
+
+== Useful commands
+=== MLX Server
 [source]
 ----
 mlx_lm.server --model mlx-community/Qwen2.5-Coder-14B-Instruct-4bit
 ----
 
-== Aider
+=== Aider
 [source]
 ----
 OPENAI_API_BASE=http://localhost:8080/v1 OPENAI_API_KEY=foo aider --copy-paste --edit-format diff --model openai/mlx-community/Qwen2.5-Coder-14B-Instruct-4bit
 ----
+
+== Notable prompts
+=== Streamlit page structure change
+[quote]
+____
+Let's do the same with this new code.  Tell me how I should update it so that
+
+* By default, the navigation bar is hidden
+* By default, the navigation bar should only contain one element pointing to the file upload page.  The element should be named "Upload".
+* The main landing page should be the upload page.  The two pages should be merged together so that they are consistent in style and user instructions
+* Once a file is uploaded, the user should be redirected to the analysis page.  An element with name "Analysis" should be added to the navigation bar and the navigation bar should become visible.
+____
