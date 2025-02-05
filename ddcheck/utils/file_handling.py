@@ -1,8 +1,31 @@
 import json
 import tarfile
 import uuid
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+
+
+@dataclass
+class DdcheckMetadata:
+    original_filename: str
+    ddcheck_id: str
+    upload_time: datetime
+    extract_path: str
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "DdcheckMetadata":
+        data["upload_time"] = datetime.fromisoformat(data["upload_time"])
+        return cls(**data)
+
+    def to_dict(self) -> dict:
+        return {
+            "original_filename": self.original_filename,
+            "ddcheck_id": self.ddcheck_id,
+            "upload_time": self.upload_time.isoformat(),
+            "extract_path": self.extract_path,
+        }
+
 
 # Create uploads and extracts directories if they don't exist
 UPLOAD_DIRECTORY = Path("/tmp/uploads")
@@ -32,17 +55,17 @@ def save_uploaded_file(uploaded_file):
     with tarfile.open(temp_tarball) as tar:
         tar.extractall(path=extract_path)
 
-    # Create metadata file
-    metadata = {
-        "original_filename": uploaded_file.name,
-        "ddcheck_id": extract_id,
-        "upload_time": datetime.utcnow().isoformat(),
-        "extract_path": str(extract_path),
-    }
+    # Create metadata
+    metadata = DdcheckMetadata(
+        original_filename=uploaded_file.name,
+        ddcheck_id=extract_id,
+        upload_time=datetime.utcnow(),
+        extract_path=str(extract_path),
+    )
 
     metadata_file = extract_path / "ddcheck-metadata.json"
     with open(metadata_file, "w") as f:
-        json.dump(metadata, f, indent=2)
+        json.dump(metadata.to_dict(), f, indent=2)
 
     # Clean up temporary tarball
     temp_tarball.unlink()
@@ -50,19 +73,17 @@ def save_uploaded_file(uploaded_file):
     return extract_path
 
 
-def list_extracted_tarballs():
+def get_all_metadata() -> list[DdcheckMetadata]:
     """
     Find all extracted tarballs and return their metadata.
 
-    :return: List of tuples (original_filename, extract_path)
+    :return: List of DdcheckMetadata objects
     """
     results = []
     for extract_dir in EXTRACT_DIRECTORY.iterdir():
         metadata_file = extract_dir / "ddcheck-metadata.json"
         if metadata_file.exists():
             with open(metadata_file) as f:
-                metadata = json.load(f)
-                results.append(
-                    (metadata["original_filename"], metadata["extract_path"])
-                )
+                metadata_dict = json.load(f)
+                results.append(DdcheckMetadata.from_dict(metadata_dict))
     return results
