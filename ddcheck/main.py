@@ -1,13 +1,15 @@
 import streamlit as st
-from st_pages import get_nav_from_toml, hide_pages
 from streamlit.column_config import LinkColumn
 
 from ddcheck.utils.file_handling import get_all_metadata, save_uploaded_file
 
 st.set_page_config(initial_sidebar_state="collapsed")
 
-nav = get_nav_from_toml()
-pg = st.navigation(nav)
+pg = st.navigation(
+    [
+        st.Page("main.py", title="Upload", icon="📤"),
+    ]
+)
 
 st.title("DDCheck")
 st.subheader("Dremio Diagnostics Tarball Analysis Tool")
@@ -65,5 +67,3 @@ if existing_tarballs:
 
 else:
     st.info("No previously uploaded tarballs found")
-
-hide_pages(["Analysis"])
