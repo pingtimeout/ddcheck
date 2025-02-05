@@ -34,17 +34,22 @@ st.write("Or select a previously uploaded tarball:")
 # Previously uploaded tarballs section
 existing_tarballs = get_all_metadata()
 if existing_tarballs:
-    # Create a list of dictionaries for the table
-    table_data = [
-        {
-            "Original Filename": metadata.original_filename,
-            "Upload Time (UTC)": metadata.upload_time.isoformat(),
-            "DDCheck ID": metadata.ddcheck_id,
-        }
-        for metadata in existing_tarballs
-    ]
+    # Sort the table data before displaying it by upload time (newest first)
+    table_data = sorted(
+        [
+            {
+                "Original Filename": metadata.original_filename,
+                "Upload Time (UTC)": metadata.upload_time.isoformat(),
+                "DDCheck ID": metadata.ddcheck_id,
+            }
+            for metadata in existing_tarballs
+        ],
+        key=lambda x: x["Upload Time (UTC)"],
+        reverse=True
+    )
 
-    selected_row = st.data_editor(
+    # Create a dataframe for the table
+    df_selection = st.dataframe(
         table_data,
         column_config={
             "Original Filename": st.column_config.TextColumn("Original Filename"),
@@ -52,22 +57,14 @@ if existing_tarballs:
             "DDCheck ID": st.column_config.TextColumn("DDCheck ID"),
         },
         hide_index=True,
-        num_rows="fixed",
+        use_container_width=True,
+        on_click=lambda row: (
+            setattr(st.session_state, 'uploaded_file_path', 
+                next(m.extract_path for m in existing_tarballs if m.ddcheck_id == row['DDCheck ID']))
+            and st.switch_page("pages/analysis.py")
+        )
     )
 
-    # If a row is selected (clicked)
-    if selected_row is not None:
-        selected_id = None
-        for row in table_data:
-            if row == selected_row:
-                selected_id = row["DDCheckID"]
-                break
-
-        if selected_id:
-            for metadata in existing_tarballs:
-                if metadata.ddcheck_id == selected_id:
-                    st.session_state.uploaded_file_path = metadata.extract_path
-                    st.switch_page("pages/analysis.py")
 else:
     st.info("No previously uploaded tarballs found")
 
