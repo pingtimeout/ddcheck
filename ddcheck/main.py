@@ -1,6 +1,6 @@
 import streamlit as st
 from st_pages import get_nav_from_toml, hide_pages
-from st_pages.core.column_config import LinkColumn
+from streamlit.column_config import LinkColumn
 
 from ddcheck.utils.file_handling import get_all_metadata, save_uploaded_file
 
@@ -57,9 +57,7 @@ if existing_tarballs:
         column_config={
             "DDCheck ID": LinkColumn(
                 "DDCheck ID",
-                display_text=lambda x: x.split("=")[
-                    -1
-                ],  # Extract just the ID from the URL
+                display_text=r"http://.*ddcheck_id=(.*)",
             )
         },
     )
