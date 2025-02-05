@@ -2,11 +2,11 @@
 == MLX Server
 [source]
 ----
-mlx_lm.server --model mlx-community/Qwen2.5-Coder-3B-Instruct-4bit
+mlx_lm.server --model mlx-community/Qwen2.5-Coder-14B-Instruct-4bit
 ----
 
 == Aider
 [source]
 ----
-OPENAI_API_BASE=http://localhost:8080/v1 OPENAI_API_KEY=foo aider --model openai/mlx-community/Qwen2.5-Coder-3B-Instruct-4bit --copy-paste
+OPENAI_API_BASE=http://localhost:8080/v1 OPENAI_API_KEY=foo aider --copy-paste --edit-format diff --model openai/mlx-community/Qwen2.5-Coder-14B-Instruct-4bit
 ----
