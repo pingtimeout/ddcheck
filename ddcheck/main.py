@@ -38,9 +38,9 @@ if existing_tarballs:
     table_data = sorted(
         [
             {
+                "DDCheck ID": metadata.ddcheck_id,
                 "Original Filename": metadata.original_filename,
                 "Upload Time (UTC)": metadata.upload_time.isoformat(),
-                "DDCheck ID": metadata.ddcheck_id,
             }
             for metadata in existing_tarballs
         ],
