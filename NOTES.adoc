@@ -31,3 +31,6 @@ ____
 
 === MacOS file upload issue
 https://github.com/copilot/c/40224660-58f6-470c-8896-35843a9d3e45
+
+=== Extract Python class
+https://github.com/copilot/c/ca63ae2d-218a-4bf9-876c-0e98e79f89d6 applied on 40b1cd7eefdfffe7fac9e55b8efa16052be5a0a6
