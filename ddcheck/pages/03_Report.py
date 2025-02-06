@@ -4,7 +4,7 @@ import streamlit as st
 from ddcheck.storage import DdcheckMetadata
 from ddcheck.storage.list import get_uploaded_metadata
 
-# Each node is associated to a dict containing a list of values for keys us, ni
+st.set_page_config(layout="wide")
 
 # Define CPU metrics display order and colors (bottom to top)
 CPU_METRICS = [
@@ -32,7 +32,7 @@ else:
         st.session_state.pop("ddcheck_id")
         st.switch_page("pages/01_Upload.py")
 
-    st.write(f"Report for {metadata.original_filename} (ID: {metadata.ddcheck_id})")
+    st.title(f"Report for {metadata.original_filename}")
 
     # Invoke the ttop analysis function and write its result
     for node in metadata.nodes:

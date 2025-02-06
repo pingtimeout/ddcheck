@@ -4,6 +4,8 @@ from streamlit.column_config import LinkColumn
 from ddcheck.storage.list import list_all_uploaded_tarballs
 from ddcheck.storage.upload import save_uploaded_tarball
 
+st.set_page_config(layout="centered")
+
 st.title("DDCheck")
 st.subheader("Dremio Diagnostics Tarball Analysis Tool")
 st.write(
