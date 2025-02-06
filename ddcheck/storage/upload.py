@@ -77,6 +77,7 @@ def save_uploaded_tarball(uploaded_file) -> Optional[DdcheckMetadata]:
         upload_time=datetime.utcnow(),
         extract_path=str(extract_path),
         nodes=nodes,
+        cpu_usage={},
     )
 
     metadata_file = extract_path / "ddcheck-metadata.json"
