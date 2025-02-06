@@ -33,7 +33,8 @@ for node in metadata.nodes:
     st.subheader(f"Node: {node}")
 
     # Analyze node data if not already analyzed
-    if metadata.cpu_usage is None or node not in metadata.cpu_usage:
+    if metadata.cpu_usage == {} or node not in metadata.cpu_usage:
+        st.write("Analyzing CPU data for this node...")
         analyse_top_output(metadata, node)
 
     if metadata.cpu_usage and node in metadata.cpu_usage:
