@@ -1,0 +1,6 @@
+[theme]
+primaryColor = "#43b8c9"
+
+[server]
+runOnSave = true
+maxUploadSize = 2000
