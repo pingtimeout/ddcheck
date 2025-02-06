@@ -6,13 +6,15 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
+from streamlit.runtime.uploaded_file_manager import UploadedFile
+
 from ddcheck.storage import EXTRACT_DIRECTORY, DdcheckMetadata
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 
-def save_uploaded_tarball(uploaded_file) -> Optional[DdcheckMetadata]:
+def save_uploaded_tarball(uploaded_file: UploadedFile) -> Optional[DdcheckMetadata]:
     """
     Extract the uploaded tarball and save metadata.
 

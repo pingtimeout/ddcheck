@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 
 from ddcheck.analysis.top import analyse_top_output
+from ddcheck.storage import DdcheckMetadata
 from ddcheck.storage.list import get_uploaded_metadata
 
 # Each node is associated to a dict containing a list of values for keys us, ni
@@ -25,28 +26,31 @@ if "ddcheck_id" not in st.session_state:
     st.switch_page("pages/01_Upload.py")
 
 # Add your analysis logic here
-metadata = get_uploaded_metadata(st.session_state.ddcheck_id)
-st.write(f"Analysis for {metadata.original_filename} (ID: {metadata.ddcheck_id})")
+metadata: DdcheckMetadata | None = get_uploaded_metadata(st.session_state.ddcheck_id)
+if metadata is None:
+    st.switch_page("pages/01_Upload.py")
+else:
+    st.write(f"Analysis for {metadata.original_filename} (ID: {metadata.ddcheck_id})")
 
-# Invoke the ttop analysis function and write its result
-for node in metadata.nodes:
-    st.subheader(f"Node: {node}")
+    # Invoke the ttop analysis function and write its result
+    for node in metadata.nodes:
+        st.subheader(f"Node: {node}")
 
-    # Analyze node data if not already analyzed
-    if metadata.cpu_usage == {} or node not in metadata.cpu_usage:
-        st.write("Analyzing CPU data for this node...")
-        analyse_top_output(metadata, node)
+        # Analyze node data if not already analyzed
+        if metadata.cpu_usage == {} or node not in metadata.cpu_usage:
+            st.write("Analyzing CPU data for this node...")
+            analyse_top_output(metadata, node)
 
-    if metadata.cpu_usage and node in metadata.cpu_usage:
-        cpu_data = metadata.cpu_usage[node]
-        if any(cpu_data.values()):
-            # Create DataFrame for plotting
-            df = pd.DataFrame(cpu_data)
+        if metadata.cpu_usage and node in metadata.cpu_usage:
+            cpu_data = metadata.cpu_usage[node]
+            if any(cpu_data.values()):
+                # Create DataFrame for plotting
+                df = pd.DataFrame(cpu_data)
 
-            # Create stacked area chart
-            st.area_chart(
-                df[list(metric for metric, _ in CPU_METRICS)],
-                color=list(color for _, color in CPU_METRICS),
-            )
-        else:
-            st.warning("No CPU data available for this node")
+                # Create stacked area chart
+                st.area_chart(
+                    df[list(metric for metric, _ in CPU_METRICS)],
+                    color=list(color for _, color in CPU_METRICS),
+                )
+            else:
+                st.warning("No CPU data available for this node")
