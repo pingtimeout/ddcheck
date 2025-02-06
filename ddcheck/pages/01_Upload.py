@@ -26,7 +26,7 @@ if uploaded_file is not None:
     else:
         st.success(f"File uploaded successfully as {metadata.ddcheck_id}")
         st.session_state["ddcheck_id"] = metadata.ddcheck_id
-        st.switch_page("pages/analysis.py")
+        st.switch_page("pages/02_Analysis.py")
 
 # Separator between upload and selection
 st.divider()
@@ -39,7 +39,7 @@ if existing_tarballs:
     table_data = sorted(
         [
             {
-                "DDCheck ID": f"analysis?ddcheck_id={metadata.ddcheck_id}",
+                "DDCheck ID": f"Analysis?ddcheck_id={metadata.ddcheck_id}",
                 "Original Filename": metadata.original_filename,
                 "Upload Time (UTC)": metadata.upload_time.isoformat(),
             }
