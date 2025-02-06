@@ -1,5 +1,6 @@
 import json
 import logging
+import shutil
 import tarfile
 import uuid
 from datetime import datetime
@@ -60,7 +61,7 @@ def save_uploaded_tarball(uploaded_file) -> Optional[DdcheckMetadata]:
     # If the tarball is invalid, delete the extract directory and return None
     if not valid:
         logger.error("Invalid tarball structure - cleaning up extraction directory")
-        extract_path.rmdir()
+        shutil.rmtree(extract_path)
         return None
 
     # Read the summary.json file and collect node names
