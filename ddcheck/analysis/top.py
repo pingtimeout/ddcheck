@@ -1,21 +1,34 @@
 import logging
 from glob import glob
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, List
 
 from ddcheck.storage import DdcheckMetadata
 
 logger = logging.getLogger(__name__)
 
+def parse_cpu_line(cpu_data: Dict[str, List[float]], line: str) -> bool:
+    """
+    Parse a line containing CPU data and update the cpu_data dictionary.
+
+    :param cpu_data: Dictionary to update with CPU measurements
+    :param line: Line to parse
+    :return: True if the line was parsed as CPU data, False otherwise
+    """
+    if not line.startswith("%Cpu(s):"):
+        return False
+
+    # Remove "%Cpu(s):" prefix and split by comma
+    cpu_parts = line.replace("%Cpu(s):", "").strip().split(",")
+
+    # Process each CPU measurement
+    for part in cpu_parts:
+        value_str, key = part.strip().split()
+        cpu_data[key].append(float(value_str))
+
+    return True
 
 def analyse_top_output(metadata: DdcheckMetadata, node: str) -> Optional[int]:
-    """
-    Analyze top output for a specific node.
-
-    :param metadata: Metadata about the uploaded tarball
-    :param node: Name of the node to analyze
-    :return: Number of CPU measurements found, or None if an error occurred
-    """
     # Verify node exists in metadata
     if node not in metadata.nodes:
         logger.error(f"Node {node} not found in metadata nodes: {metadata.nodes}")
@@ -36,28 +49,15 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> Optional[int]:
         return None
 
     # Initialize CPU data collections
-    cpu_data: dict[str, list[float]] = {
-        "us": [],
-        "sy": [],
-        "ni": [],
-        "id": [],
-        "wa": [],
-        "hi": [],
-        "si": [],
-        "st": [],
+    cpu_data: Dict[str, List[float]] = {
+        "us": [], "sy": [], "ni": [], "id": [],
+        "wa": [], "hi": [], "si": [], "st": []
     }
 
     try:
         with open(ttop_file) as f:
             for line in f:
-                if line.startswith("%Cpu(s):"):
-                    # Remove "%Cpu(s):" prefix and split by comma
-                    cpu_parts = line.replace("%Cpu(s):", "").strip().split(",")
-
-                    # Process each CPU measurement
-                    for part in cpu_parts:
-                        value_str, key = part.strip().split()
-                        cpu_data[key].append(float(value_str))
+                parse_cpu_line(cpu_data, line)
 
             # Only store data if we found any measurements
             if any(cpu_data.values()):

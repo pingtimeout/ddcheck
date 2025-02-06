@@ -10,9 +10,7 @@ class DdcheckMetadata:
     upload_time: datetime
     extract_path: str
     nodes: list[str]
-    node_cpu_data: dict[str, dict[str, list[float]]] = (
-        None  # node -> cpu_type -> measurements
-    )
+    node_cpu_data: dict[str, dict[str, list[float]]]
 
     @classmethod
     def from_dict(cls, data: dict) -> "DdcheckMetadata":
