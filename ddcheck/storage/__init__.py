@@ -18,7 +18,7 @@ class DdcheckMetadata:
     def from_dict(cls, data: dict) -> "DdcheckMetadata":
         data["upload_time"] = datetime.fromisoformat(data["upload_time"])
         data["nodes"] = data["nodes"]
-        data["node_cpu_data"] = data.get("node_cpu_data", {})
+        data["cpu_usage"] = data.get("cpu_usage", {})
         return cls(**data)
 
     def to_dict(self) -> dict:
@@ -28,7 +28,7 @@ class DdcheckMetadata:
             "upload_time": self.upload_time.isoformat(),
             "extract_path": self.extract_path,
             "nodes": self.nodes,
-            "node_cpu_data": self.cpu_usage or {},
+            "cpu_usage": self.cpu_usage or {},
         }
 
 
