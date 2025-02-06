@@ -10,7 +10,7 @@ class DdcheckMetadata:
     upload_time: datetime
     extract_path: str
     nodes: list[str]
-    node_cpu_data: dict[str, dict[str, list[float]]]
+    cpu_usage: dict[str, dict[str, list[float]]]
 
     @classmethod
     def from_dict(cls, data: dict) -> "DdcheckMetadata":
@@ -26,7 +26,7 @@ class DdcheckMetadata:
             "upload_time": self.upload_time.isoformat(),
             "extract_path": self.extract_path,
             "nodes": self.nodes,
-            "node_cpu_data": self.node_cpu_data or {},
+            "node_cpu_data": self.cpu_usage or {},
         }
 
 

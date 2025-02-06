@@ -67,9 +67,9 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> Optional[bool]:
             for line in f:
                 parse_cpu_line(cpu_data, line)
 
-            if metadata.node_cpu_data is None:
-                metadata.node_cpu_data = {}
-            metadata.node_cpu_data[node] = cpu_data
+            if metadata.cpu_usage is None:
+                metadata.cpu_usage = {}
+            metadata.cpu_usage[node] = cpu_data
             return any(cpu_data.values())
 
     except Exception as e:
