@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def analyse_top_output(metadata: DdcheckMetadata, node: str) -> Optional[int]:
     """
-    Analyze ttop output for a specific node.
+    Analyze top output for a specific node.
 
     :param metadata: Metadata about the uploaded tarball
     :param node: Name of the node to analyze

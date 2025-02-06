@@ -1,6 +1,6 @@
 import streamlit as st
 
-from ddcheck.analysis.ttop import analyse_top_output
+from ddcheck.analysis.top import analyse_top_output
 from ddcheck.storage.list import get_uploaded_metadata
 
 if "ddcheck_id" in st.query_params:
