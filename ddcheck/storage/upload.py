@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from ddcheck.storage import EXTRACT_DIRECTORY, UPLOAD_DIRECTORY, DdcheckMetadata
+from ddcheck.storage import EXTRACT_DIRECTORY, DdcheckMetadata
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -33,24 +33,16 @@ def save_uploaded_tarball(uploaded_file) -> Optional[DdcheckMetadata]:
     extract_path.mkdir()
     logger.debug(f"Created extraction directory at {extract_path}")
 
-    # Save tarball temporarily to extract it
-    temp_tarball = UPLOAD_DIRECTORY / f"{extract_id}.tar.gz"
-    with open(temp_tarball, "wb") as f:
-        f.write(uploaded_file.getbuffer())
-    logger.debug("Saved temporary tarball")
-
     # Extract the tarball and delete it
     valid = True
     try:
         logger.debug("Extracting tarball contents")
-        with tarfile.open(temp_tarball) as tar:
+        with tarfile.open(fileobj=uploaded_file) as tar:
             tar.extractall(path=extract_path)
     except tarfile.ReadError:
         # The tarball could not be read, mark it as invalid
         logger.error("Failed to read tarball - file might be corrupted")
         valid = False
-    temp_tarball.unlink()
-    logger.debug("Cleaned up temporary tarball")
 
     # A valid tarball should have a summary.json file
     summary_file = extract_path / "summary.json"

@@ -32,9 +32,7 @@ class DdcheckMetadata:
         }
 
 
-UPLOAD_DIRECTORY = Path("/tmp/uploads")
 EXTRACT_DIRECTORY = Path("/tmp/extracts")
 
-# Create uploads and extracts directories if they don't exist
-UPLOAD_DIRECTORY.mkdir(parents=True, exist_ok=True)
+# Create extracts directory if it does not exist
 EXTRACT_DIRECTORY.mkdir(parents=True, exist_ok=True)
