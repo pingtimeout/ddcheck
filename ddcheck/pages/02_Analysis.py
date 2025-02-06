@@ -36,12 +36,23 @@ else:
     for node in metadata.nodes:
         st.subheader(f"Node: {node}")
 
+        # Show analysis state
+        analysis_state = metadata.analysis_state.get(node, "not_started")
+        if analysis_state == "not_started":
+            st.write("Analyzing CPU data for this node...")
+            analyse_top_output(metadata, node)
+        elif analysis_state == "in_progress":
+            st.write("Analysis in progress...")
+        elif analysis_state == "failed":
+            st.error("Analysis failed for this node")
+            continue
+
         # Analyze node data if not already analyzed
         if metadata.cpu_usage == {} or node not in metadata.cpu_usage:
             st.write("Analyzing CPU data for this node...")
             analyse_top_output(metadata, node)
 
-        if metadata.cpu_usage and node in metadata.cpu_usage:
+        if analysis_state == "completed" and node in metadata.cpu_usage:
             cpu_data = metadata.cpu_usage[node]
             if any(cpu_data.values()):
                 # Create DataFrame for plotting

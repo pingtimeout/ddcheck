@@ -36,6 +36,15 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> Optional[bool]:
         logger.error(f"Node {node} not found in metadata nodes: {metadata.nodes}")
         return None
 
+    # Skip if analysis already completed or in progress
+    current_state = metadata.analysis_state.get(node, "not_started")
+    if current_state in ["completed", "in_progress"]:
+        logger.debug(f"Skipping analysis for node {node} - state is {current_state}")
+        return True if current_state == "completed" else None
+
+    # Mark analysis as in progress
+    metadata.analysis_state[node] = "in_progress"
+
     # Find ttop directory for node
     extract_path = Path(metadata.extract_path)
     pattern = str(extract_path / "*" / "ttop" / node / "ttop.txt")
@@ -43,11 +52,13 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> Optional[bool]:
 
     if not matching_files:
         logger.error(f"Could not find ttop.txt file for node {node} in {pattern}")
+        metadata.analysis_state[node] = "failed"
         return None
 
     ttop_file = Path(matching_files[0])
     if not ttop_file.is_file():
         logger.error(f"Found path is not a file: {ttop_file}")
+        metadata.analysis_state[node] = "failed"
         return None
 
     # Initialize CPU data collections
@@ -67,8 +78,10 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> Optional[bool]:
             for line in f:
                 parse_cpu_line(cpu_data, line)
             metadata.cpu_usage[node] = cpu_data
+            metadata.analysis_state[node] = "completed"
             return any(cpu_data.values())
 
     except Exception as e:
         logger.error(f"Error reading ttop file {ttop_file}: {e}")
+        metadata.analysis_state[node] = "failed"
         return None

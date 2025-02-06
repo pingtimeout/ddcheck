@@ -75,6 +75,7 @@ def save_uploaded_tarball(uploaded_file: UploadedFile) -> Optional[DdcheckMetada
         extract_path=str(extract_path),
         nodes=nodes,
         cpu_usage={},
+        analysis_state={node: "not_started" for node in nodes},
     )
 
     metadata_file = extract_path / "ddcheck-metadata.json"
