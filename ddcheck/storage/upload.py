@@ -67,7 +67,9 @@ def save_uploaded_tarball(uploaded_file) -> Optional[DdcheckMetadata]:
     logger.debug("Reading summary.json and collecting node information")
     with open(summary_file) as f:
         summary_data = json.load(f)
-        nodes = list(summary_data.get("dremioVersion", {}).keys())
+        executors = summary_data.get("executors", [])
+        coordinators = summary_data.get("coordinators", [])
+        nodes = executors + coordinators
     logger.debug(f"Found {len(nodes)} nodes in the cluster data")
 
     # Create metadata
