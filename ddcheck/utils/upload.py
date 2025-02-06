@@ -45,17 +45,19 @@ def save_uploaded_tarball(uploaded_file) -> Optional[DdcheckMetadata]:
         valid = False
     temp_tarball.unlink()
 
-    # A valid tarball should have a `ttop` directory
-    valid = valid and (extract_path / "ttop").exists()
+    # A valid tarball should have a summary.json file
+    summary_file = extract_path / "summary.json"
+    valid = valid and summary_file.exists()
 
     # If the tarball is invalid, delete the extract directory and return None
     if not valid:
         extract_path.rmdir()
         return None
 
-    # Collect all subdirectory names in the ttop directory
-    ttop_path = extract_path / "ttop"
-    nodes = [d.name for d in ttop_path.iterdir() if d.is_dir()]
+    # Read the summary.json file and collect node names
+    with open(summary_file) as f:
+        summary_data = json.load(f)
+        nodes = list(summary_data.get("dremioVersion", {}).keys())
 
     # Create metadata
     metadata = DdcheckMetadata(
