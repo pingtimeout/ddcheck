@@ -1,4 +1,5 @@
 import json
+import logging
 import tarfile
 import uuid
 from datetime import datetime
@@ -6,6 +7,9 @@ from pathlib import Path
 from typing import Optional
 
 from ddcheck.utils import DdcheckMetadata
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # Create uploads and extracts directories if they don't exist
 UPLOAD_DIRECTORY = Path("/tmp/uploads")
@@ -21,43 +25,56 @@ def save_uploaded_tarball(uploaded_file) -> Optional[DdcheckMetadata]:
     :param uploaded_file: Uploaded file object
     :return: Path to the extracted directory
     """
+    logger.info(f"Starting to process {uploaded_file.name}")
+
     # Check if the file is a tarball, if not, return None
     if not uploaded_file.name.endswith(".tar.gz"):
+        logger.error(f"Invalid file type: {uploaded_file.name} (must end with .tar.gz)")
         return None
 
     # Create a unique directory for this upload
     extract_id = str(uuid.uuid4())
     extract_path = EXTRACT_DIRECTORY / extract_id
     extract_path.mkdir()
+    logger.info(f"Created extraction directory at {extract_path}")
 
     # Save tarball temporarily to extract it
     temp_tarball = UPLOAD_DIRECTORY / f"{extract_id}.tar.gz"
     with open(temp_tarball, "wb") as f:
         f.write(uploaded_file.getbuffer())
+    logger.info("Saved temporary tarball")
 
     # Extract the tarball and delete it
     valid = True
     try:
+        logger.info("Extracting tarball contents")
         with tarfile.open(temp_tarball) as tar:
             tar.extractall(path=extract_path)
     except tarfile.ReadError:
         # The tarball could not be read, mark it as invalid
+        logger.error("Failed to read tarball - file might be corrupted")
         valid = False
     temp_tarball.unlink()
+    logger.info("Cleaned up temporary tarball")
 
     # A valid tarball should have a summary.json file
     summary_file = extract_path / "summary.json"
     valid = valid and summary_file.exists()
+    if not summary_file.exists():
+        logger.error("Missing summary.json file in uploaded tarball")
 
     # If the tarball is invalid, delete the extract directory and return None
     if not valid:
+        logger.error("Invalid tarball structure - cleaning up extraction directory")
         extract_path.rmdir()
         return None
 
     # Read the summary.json file and collect node names
+    logger.info("Reading summary.json and collecting node information")
     with open(summary_file) as f:
         summary_data = json.load(f)
         nodes = list(summary_data.get("dremioVersion", {}).keys())
+    logger.info(f"Found {len(nodes)} nodes in the cluster data")
 
     # Create metadata
     metadata = DdcheckMetadata(
@@ -71,6 +88,7 @@ def save_uploaded_tarball(uploaded_file) -> Optional[DdcheckMetadata]:
     metadata_file = extract_path / "ddcheck-metadata.json"
     with open(metadata_file, "w") as f:
         json.dump(metadata.to_dict(), f, indent=2)
+    logger.info(f"Successfully processed {uploaded_file.name}")
 
     return metadata
 
