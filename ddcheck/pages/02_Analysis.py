@@ -1,7 +1,22 @@
+import pandas as pd
 import streamlit as st
 
 from ddcheck.analysis.top import analyse_top_output
 from ddcheck.storage.list import get_uploaded_metadata
+
+# Each node is associated to a dict containing a list of values for keys us, ni
+
+# Define CPU metrics display order and colors (bottom to top)
+CPU_METRICS = [
+    ("hi", "#FF9F1C"),  # hardware interrupts - orange
+    ("si", "#6C5B7B"),  # software interrupts - purple
+    ("st", "#C8C8C8"),  # stolen - gray
+    ("us", "#4ECDC4"),  # user - cyan
+    ("ni", "#45B7D1"),  # user nice - light blue
+    ("sy", "#FFD93D"),  # system - yellow
+    ("wa", "#FF6B6B"),  # iowait - red
+    ("id", "#96CEB4"),  # idle - soft green
+]
 
 if "ddcheck_id" in st.query_params:
     st.session_state["ddcheck_id"] = st.query_params["ddcheck_id"]
@@ -15,5 +30,22 @@ st.write(f"Analysis for {metadata.original_filename} (ID: {metadata.ddcheck_id})
 
 # Invoke the ttop analysis function and write its result
 for node in metadata.nodes:
-    st.write(node)
-    st.write(analyse_top_output(metadata, node))
+    st.subheader(f"Node: {node}")
+
+    # Analyze node data if not already analyzed
+    if metadata.cpu_usage is None or node not in metadata.cpu_usage:
+        analyse_top_output(metadata, node)
+
+    if metadata.cpu_usage and node in metadata.cpu_usage:
+        cpu_data = metadata.cpu_usage[node]
+        if any(cpu_data.values()):
+            # Create DataFrame for plotting
+            df = pd.DataFrame(cpu_data)
+
+            # Create stacked area chart
+            st.area_chart(
+                df[list(metric for metric, _ in CPU_METRICS)],
+                color=list(color for _, color in CPU_METRICS),
+            )
+        else:
+            st.warning("No CPU data available for this node")
