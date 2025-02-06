@@ -12,7 +12,7 @@ st.write(
 
 uploaded_file = st.file_uploader(
     "Choose a diagnostics tarball",
-    type=["gz"],
+    type=["gz", "tgz"],
     help="Upload a Dremio diagnostics tarball (.tar.gz file)",
 )
 
