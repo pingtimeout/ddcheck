@@ -1,9 +1,10 @@
 import logging
 from glob import glob
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from ddcheck.storage import DdcheckMetadata
+from ddcheck.storage.upload import write_metadata_to_disk
 
 logger = logging.getLogger(__name__)
 
@@ -30,17 +31,24 @@ def parse_cpu_line(cpu_data: Dict[str, List[float]], line: str) -> bool:
     return True
 
 
-def analyse_top_output(metadata: DdcheckMetadata, node: str) -> Optional[bool]:
-    # Verify node exists in metadata
+def analyse_top_output(metadata: DdcheckMetadata, node: str) -> str:
+    try:
+        return _analyse_top_output(metadata, node)
+    finally:
+        write_metadata_to_disk(metadata)
+
+
+def _analyse_top_output(metadata: DdcheckMetadata, node: str) -> str:
+    # If node does not exist in metadata, log an error and mark it as skipped
     if node not in metadata.nodes:
         logger.error(f"Node {node} not found in metadata nodes: {metadata.nodes}")
-        return None
+        metadata.analysis_state[node] = "skipped"
 
-    # Skip if analysis already completed or in progress
+    # Skip the analysis if it has already been attempted
     current_state = metadata.analysis_state.get(node, "not_started")
-    if current_state in ["completed", "in_progress"]:
+    if current_state != "not_started":
         logger.debug(f"Skipping analysis for node {node} - state is {current_state}")
-        return True if current_state == "completed" else None
+        return current_state
 
     # Mark analysis as in progress
     metadata.analysis_state[node] = "in_progress"
@@ -52,14 +60,14 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> Optional[bool]:
 
     if not matching_files:
         logger.error(f"Could not find ttop.txt file for node {node} in {pattern}")
-        metadata.analysis_state[node] = "failed"
-        return None
+        metadata.analysis_state[node] = "skipped"
+        return metadata.analysis_state[node]
 
     ttop_file = Path(matching_files[0])
     if not ttop_file.is_file():
         logger.error(f"Found path is not a file: {ttop_file}")
-        metadata.analysis_state[node] = "failed"
-        return None
+        metadata.analysis_state[node] = "skipped"
+        return metadata.analysis_state[node]
 
     # Initialize CPU data collections
     cpu_data: Dict[str, List[float]] = {
@@ -79,9 +87,8 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> Optional[bool]:
                 parse_cpu_line(cpu_data, line)
             metadata.cpu_usage[node] = cpu_data
             metadata.analysis_state[node] = "completed"
-            return any(cpu_data.values())
-
     except Exception as e:
         logger.error(f"Error reading ttop file {ttop_file}: {e}")
         metadata.analysis_state[node] = "failed"
-        return None
+
+    return metadata.analysis_state[node]

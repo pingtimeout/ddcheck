@@ -4,6 +4,7 @@ import shutil
 import tarfile
 import uuid
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 from streamlit.runtime.uploaded_file_manager import UploadedFile
@@ -78,9 +79,14 @@ def save_uploaded_tarball(uploaded_file: UploadedFile) -> Optional[DdcheckMetada
         analysis_state={node: "not_started" for node in nodes},
     )
 
-    metadata_file = extract_path / "ddcheck-metadata.json"
-    with open(metadata_file, "w") as f:
-        json.dump(metadata.to_dict(), f, indent=2)
+    write_metadata_to_disk(metadata)
     logger.debug(f"Successfully processed {filename}")
 
     return metadata
+
+
+def write_metadata_to_disk(metadata: DdcheckMetadata) -> None:
+    metadata_file = Path(metadata.extract_path) / "ddcheck-metadata.json"
+    with open(metadata_file, "w") as f:
+        json.dump(metadata.to_dict(), f, indent=2)
+    logger.debug(f"Successfully wrote metadata to {metadata_file}")
