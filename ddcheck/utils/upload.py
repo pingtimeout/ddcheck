@@ -1,32 +1,11 @@
 import json
 import tarfile
 import uuid
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-
-@dataclass
-class DdcheckMetadata:
-    original_filename: str
-    ddcheck_id: str
-    upload_time: datetime
-    extract_path: str
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "DdcheckMetadata":
-        data["upload_time"] = datetime.fromisoformat(data["upload_time"])
-        return cls(**data)
-
-    def to_dict(self) -> dict:
-        return {
-            "original_filename": self.original_filename,
-            "ddcheck_id": self.ddcheck_id,
-            "upload_time": self.upload_time.isoformat(),
-            "extract_path": self.extract_path,
-        }
-
+from ddcheck.utils import DdcheckMetadata
 
 # Create uploads and extracts directories if they don't exist
 UPLOAD_DIRECTORY = Path("/tmp/uploads")
@@ -89,7 +68,7 @@ def save_uploaded_tarball(uploaded_file) -> Optional[DdcheckMetadata]:
     return metadata
 
 
-def get_all_metadata() -> list[DdcheckMetadata]:
+def list_all_uploaded_tarballs() -> list[DdcheckMetadata]:
     """
     Find all extracted tarballs and return their metadata.
 

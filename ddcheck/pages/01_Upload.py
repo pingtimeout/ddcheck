@@ -1,7 +1,7 @@
 import streamlit as st
 from streamlit.column_config import LinkColumn
 
-from ddcheck.utils.file_handling import get_all_metadata, save_uploaded_tarball
+from ddcheck.utils.upload import list_all_uploaded_tarballs, save_uploaded_tarball
 
 st.title("DDCheck")
 st.subheader("Dremio Diagnostics Tarball Analysis Tool")
@@ -33,7 +33,7 @@ st.divider()
 st.write("Or select a previously uploaded tarball:")
 
 # Previously uploaded tarballs section
-existing_tarballs = get_all_metadata()
+existing_tarballs = list_all_uploaded_tarballs()
 if existing_tarballs:
     # Sort the table data before displaying it by upload time (newest first)
     table_data = sorted(
