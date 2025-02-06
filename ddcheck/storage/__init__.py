@@ -10,6 +10,8 @@ class DdcheckMetadata:
     upload_time: datetime
     extract_path: str
     nodes: list[str]
+    # CPU usage per node.
+    # Each node is associated to a dict containing a list of values for keys us, sy, ni, id, wa, hi, si, st
     cpu_usage: dict[str, dict[str, list[float]]]
 
     @classmethod
