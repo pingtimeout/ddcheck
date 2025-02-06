@@ -4,6 +4,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 
 @dataclass
@@ -34,13 +35,17 @@ UPLOAD_DIRECTORY.mkdir(parents=True, exist_ok=True)
 EXTRACT_DIRECTORY.mkdir(parents=True, exist_ok=True)
 
 
-def save_uploaded_file(uploaded_file) -> DdcheckMetadata:
+def save_uploaded_tarball(uploaded_file) -> Optional[DdcheckMetadata]:
     """
     Extract the uploaded tarball and save metadata.
 
     :param uploaded_file: Uploaded file object
     :return: Path to the extracted directory
     """
+    # Check if the file is a tarball, if not, return None
+    if not uploaded_file.name.endswith(".tar.gz"):
+        return None
+
     # Create a unique directory for this upload
     extract_id = str(uuid.uuid4())
     extract_path = EXTRACT_DIRECTORY / extract_id
@@ -51,9 +56,23 @@ def save_uploaded_file(uploaded_file) -> DdcheckMetadata:
     with open(temp_tarball, "wb") as f:
         f.write(uploaded_file.getbuffer())
 
-    # Extract the tarball
-    with tarfile.open(temp_tarball) as tar:
-        tar.extractall(path=extract_path)
+    # Extract the tarball and delete it
+    valid = True
+    try:
+        with tarfile.open(temp_tarball) as tar:
+            tar.extractall(path=extract_path)
+    except tarfile.ReadError:
+        # The tarball could not be read, mark it as invalid
+        valid = False
+    temp_tarball.unlink()
+
+    # A valid tarball should have a `ttop` directory
+    valid = valid and (extract_path / "ttop").exists()
+
+    # If the tarball is invalid, delete the extract directory and return None
+    if not valid:
+        extract_path.rmdir()
+        return None
 
     # Create metadata
     metadata = DdcheckMetadata(
@@ -66,9 +85,6 @@ def save_uploaded_file(uploaded_file) -> DdcheckMetadata:
     metadata_file = extract_path / "ddcheck-metadata.json"
     with open(metadata_file, "w") as f:
         json.dump(metadata.to_dict(), f, indent=2)
-
-    # Clean up temporary tarball
-    temp_tarball.unlink()
 
     return metadata
 

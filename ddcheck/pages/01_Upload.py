@@ -1,7 +1,7 @@
 import streamlit as st
 from streamlit.column_config import LinkColumn
 
-from ddcheck.utils.file_handling import get_all_metadata, save_uploaded_file
+from ddcheck.utils.file_handling import get_all_metadata, save_uploaded_tarball
 
 st.title("DDCheck")
 st.subheader("Dremio Diagnostics Tarball Analysis Tool")
@@ -18,10 +18,15 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file is not None:
     # Save the uploaded file and switch to the analysis page
-    metadata = save_uploaded_file(uploaded_file)
-    st.success(f"File uploaded successfully as {metadata.ddcheck_id}")
-    st.session_state["ddcheck_id"] = metadata.ddcheck_id
-    st.switch_page("pages/analysis.py")
+    metadata = save_uploaded_tarball(uploaded_file)
+    if metadata is None:
+        st.error(
+            "Invalid tarball uploaded. Please upload a valid Dremio diagnostics tarball."
+        )
+    else:
+        st.success(f"File uploaded successfully as {metadata.ddcheck_id}")
+        st.session_state["ddcheck_id"] = metadata.ddcheck_id
+        st.switch_page("pages/analysis.py")
 
 # Separator between upload and selection
 st.divider()
