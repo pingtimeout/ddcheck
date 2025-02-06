@@ -53,12 +53,17 @@ def save_uploaded_tarball(uploaded_file) -> Optional[DdcheckMetadata]:
         extract_path.rmdir()
         return None
 
+    # Collect all subdirectory names in the ttop directory
+    ttop_path = extract_path / "ttop"
+    nodes = [d.name for d in ttop_path.iterdir() if d.is_dir()]
+
     # Create metadata
     metadata = DdcheckMetadata(
         original_filename=uploaded_file.name,
         ddcheck_id=extract_id,
         upload_time=datetime.utcnow(),
         extract_path=str(extract_path),
+        nodes=nodes,
     )
 
     metadata_file = extract_path / "ddcheck-metadata.json"
