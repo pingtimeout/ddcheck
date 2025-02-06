@@ -25,11 +25,12 @@ def save_uploaded_tarball(uploaded_file) -> Optional[DdcheckMetadata]:
     :param uploaded_file: Uploaded file object
     :return: Path to the extracted directory
     """
-    logger.debug(f"Starting to process {uploaded_file.name}")
+    filename = uploaded_file.name
+    logger.debug(f"Starting to process {filename}")
 
     # Check if the file is a tarball (.tar.gz or .tgz), if not, return None
-    if not uploaded_file.name.endswith(".tar.gz") and not uploaded_file.name.endswith(".tgz"):
-        logger.error(f"Invalid file type: {uploaded_file.name} (must end with .tar.gz)")
+    if not filename.endswith(".tar.gz") and not filename.endswith(".tgz"):
+        logger.error(f"Invalid file type: {filename} (must end with .tar.gz)")
         return None
 
     # Create a unique directory for this upload
@@ -78,7 +79,7 @@ def save_uploaded_tarball(uploaded_file) -> Optional[DdcheckMetadata]:
 
     # Create metadata
     metadata = DdcheckMetadata(
-        original_filename=uploaded_file.name,
+        original_filename=filename,
         ddcheck_id=extract_id,
         upload_time=datetime.utcnow(),
         extract_path=str(extract_path),
@@ -88,7 +89,7 @@ def save_uploaded_tarball(uploaded_file) -> Optional[DdcheckMetadata]:
     metadata_file = extract_path / "ddcheck-metadata.json"
     with open(metadata_file, "w") as f:
         json.dump(metadata.to_dict(), f, indent=2)
-    logger.debug(f"Successfully processed {uploaded_file.name}")
+    logger.debug(f"Successfully processed {filename}")
 
     return metadata
 
@@ -107,3 +108,19 @@ def list_all_uploaded_tarballs() -> list[DdcheckMetadata]:
                 metadata_dict = json.load(f)
                 results.append(DdcheckMetadata.from_dict(metadata_dict))
     return results
+
+
+def get_uploaded_metadata(ddcheck_id: str) -> Optional[DdcheckMetadata]:
+    """
+    Retrieve metadata for a specific upload ID.
+
+    :param ddcheck_id: Unique ID for the upload
+    :return: DdcheckMetadata object if found, otherwise None
+    """
+    extract_path = EXTRACT_DIRECTORY / ddcheck_id
+    metadata_file = extract_path / "ddcheck-metadata.json"
+    if metadata_file.exists():
+        with open(metadata_file) as f:
+            metadata_dict = json.load(f)
+            return DdcheckMetadata.from_dict(metadata_dict)
+    return None
