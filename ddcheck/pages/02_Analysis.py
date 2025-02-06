@@ -1,7 +1,7 @@
 import streamlit as st
 
 from ddcheck.analysis.ttop import analyse_top_output
-from ddcheck.utils.upload import get_uploaded_metadata
+from ddcheck.storage.list import get_uploaded_metadata
 
 if "ddcheck_id" in st.query_params:
     st.session_state["ddcheck_id"] = st.query_params["ddcheck_id"]

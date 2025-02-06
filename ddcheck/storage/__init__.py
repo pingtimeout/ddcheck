@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 
 
 @dataclass
@@ -24,3 +25,11 @@ class DdcheckMetadata:
             "extract_path": self.extract_path,
             "nodes": self.nodes,
         }
+
+
+UPLOAD_DIRECTORY = Path("/tmp/uploads")
+EXTRACT_DIRECTORY = Path("/tmp/extracts")
+
+# Create uploads and extracts directories if they don't exist
+UPLOAD_DIRECTORY.mkdir(parents=True, exist_ok=True)
+EXTRACT_DIRECTORY.mkdir(parents=True, exist_ok=True)

@@ -3,7 +3,7 @@ from glob import glob
 from pathlib import Path
 from typing import Optional
 
-from ddcheck.utils import DdcheckMetadata
+from ddcheck.storage import DdcheckMetadata
 
 logger = logging.getLogger(__name__)
 
