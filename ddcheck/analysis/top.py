@@ -1,11 +1,12 @@
 import logging
 from glob import glob
 from pathlib import Path
-from typing import Optional, Dict, List
+from typing import Dict, List, Optional
 
 from ddcheck.storage import DdcheckMetadata
 
 logger = logging.getLogger(__name__)
+
 
 def parse_cpu_line(cpu_data: Dict[str, List[float]], line: str) -> bool:
     """
@@ -28,7 +29,8 @@ def parse_cpu_line(cpu_data: Dict[str, List[float]], line: str) -> bool:
 
     return True
 
-def analyse_top_output(metadata: DdcheckMetadata, node: str) -> Optional[int]:
+
+def analyse_top_output(metadata: DdcheckMetadata, node: str) -> Optional[bool]:
     # Verify node exists in metadata
     if node not in metadata.nodes:
         logger.error(f"Node {node} not found in metadata nodes: {metadata.nodes}")
@@ -50,8 +52,14 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> Optional[int]:
 
     # Initialize CPU data collections
     cpu_data: Dict[str, List[float]] = {
-        "us": [], "sy": [], "ni": [], "id": [],
-        "wa": [], "hi": [], "si": [], "st": []
+        "us": [],
+        "sy": [],
+        "ni": [],
+        "id": [],
+        "wa": [],
+        "hi": [],
+        "si": [],
+        "st": [],
     }
 
     try:
@@ -59,13 +67,10 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> Optional[int]:
             for line in f:
                 parse_cpu_line(cpu_data, line)
 
-            # Only store data if we found any measurements
-            if any(cpu_data.values()):
-                if metadata.node_cpu_data is None:
-                    metadata.node_cpu_data = {}
-                metadata.node_cpu_data[node] = cpu_data
-                return len(cpu_data["us"])  # Return number of measurements
-            return 0
+            if metadata.node_cpu_data is None:
+                metadata.node_cpu_data = {}
+            metadata.node_cpu_data[node] = cpu_data
+            return any(cpu_data.values())
 
     except Exception as e:
         logger.error(f"Error reading ttop file {ttop_file}: {e}")
