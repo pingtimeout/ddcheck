@@ -41,6 +41,7 @@ def save_uploaded_tarball(uploaded_file: UploadedFile) -> Optional[DdcheckMetada
     try:
         logger.debug("Extracting tarball contents")
         with tarfile.open(fileobj=uploaded_file) as tar:
+            # The next lines extract the tarball contents to the extract_path.  Update it so that any directory contained at any level in the tarball is skipped if its name is either `jfr`, `logs` or `queries`. AI!
             tar.extractall(path=extract_path)
     except tarfile.ReadError:
         # The tarball could not be read, mark it as invalid
