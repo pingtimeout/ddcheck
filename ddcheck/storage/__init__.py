@@ -7,6 +7,7 @@ from pathlib import Path
 
 class Source(Enum):
     TOP = auto()
+    OS_INFO = auto()  # Add this line
 
 
 class AnalysisState(Enum):
@@ -65,6 +66,9 @@ class DdcheckMetadata:
     load_avg_15min: dict[str, list[float]]
     # Tracks state per node and source
     analysis_state: dict[str, dict[Source, AnalysisState]]
+    total_memory_kb: dict[str, int]
+    total_cpus: dict[str, int]
+    online_cpus: dict[str, list[int]]
 
     @classmethod
     def from_dict(cls, data: dict) -> "DdcheckMetadata":
@@ -87,6 +91,9 @@ class DdcheckMetadata:
             }
             for node, states in data.get("analysis_state", {}).items()
         }
+        data["total_memory_kb"] = data.get("total_memory_kb", {})
+        data["total_cpus"] = data.get("total_cpus", {})
+        data["online_cpus"] = data.get("online_cpus", {})
         return cls(**data)
 
     def to_dict(self) -> dict:
@@ -111,6 +118,9 @@ class DdcheckMetadata:
                 }
                 for node, states in self.analysis_state.items()
             },
+            "total_memory_kb": self.total_memory_kb or {},
+            "total_cpus": self.total_cpus or {},
+            "online_cpus": self.online_cpus or {},
         }
 
     def get_overall_analysis_state(self) -> AnalysisState:
