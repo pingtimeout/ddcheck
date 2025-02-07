@@ -1,7 +1,7 @@
 import streamlit as st
 
 from ddcheck.analysis.top import analyse_top_output
-from ddcheck.storage import DdcheckMetadata
+from ddcheck.storage import AnalysisState, DdcheckMetadata
 from ddcheck.storage.list import get_uploaded_metadata
 
 st.set_page_config(layout="centered")
@@ -22,10 +22,10 @@ else:
     ) as status:
         # Invoke the ttop analysis function for each node if it has not been analysed yet
         for node, state in metadata.analysis_state.items():
-            if state == "not_started":
+            if state == AnalysisState.NOT_STARTED:
                 with st.empty():
                     st.write(f"Analysing ttop output for {node}...")
-                    analysis_output = analyse_top_output(metadata, node)
+                    analysis_output = analyse_top_output(metadata, node).name.lower()
                     st.write(
                         f"Result of ttop output analysis for {node}: {analysis_output}"
                     )

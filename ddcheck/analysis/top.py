@@ -4,7 +4,7 @@ from glob import glob
 from pathlib import Path
 from typing import Dict, List
 
-from ddcheck.storage import DdcheckMetadata
+from ddcheck.storage import AnalysisState, DdcheckMetadata
 from ddcheck.storage.upload import write_metadata_to_disk
 
 logger = logging.getLogger(__name__)
@@ -80,27 +80,27 @@ def _maybe_parse_time_and_load_average_line(
     return True
 
 
-def analyse_top_output(metadata: DdcheckMetadata, node: str) -> str:
+def analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
     try:
         return _analyse_top_output(metadata, node)
     finally:
         write_metadata_to_disk(metadata)
 
 
-def _analyse_top_output(metadata: DdcheckMetadata, node: str) -> str:
+def _analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
     # If node does not exist in metadata, log an error and mark it as skipped
     if node not in metadata.nodes:
         logger.error(f"Node {node} not found in metadata nodes: {metadata.nodes}")
-        metadata.analysis_state[node] = "skipped"
+        metadata.analysis_state[node] = AnalysisState.SKIPPED
 
     # Skip the analysis if it has already been attempted
-    current_state = metadata.analysis_state.get(node, "not_started")
-    if current_state != "not_started":
+    current_state = metadata.analysis_state.get(node, AnalysisState.NOT_STARTED)
+    if current_state != AnalysisState.NOT_STARTED:
         logger.debug(f"Skipping analysis for node {node} - state is {current_state}")
         return current_state
 
     # Mark analysis as in progress
-    metadata.analysis_state[node] = "in_progress"
+    metadata.analysis_state[node] = AnalysisState.IN_PROGRESS
 
     # Find ttop directory for node
     extract_path = Path(metadata.extract_path)
@@ -109,13 +109,13 @@ def _analyse_top_output(metadata: DdcheckMetadata, node: str) -> str:
 
     if not matching_files:
         logger.error(f"Could not find ttop.txt file for node {node} in {pattern}")
-        metadata.analysis_state[node] = "skipped"
+        metadata.analysis_state[node] = AnalysisState.SKIPPED
         return metadata.analysis_state[node]
 
     ttop_file = Path(matching_files[0])
     if not ttop_file.is_file():
         logger.error(f"Found path is not a file: {ttop_file}")
-        metadata.analysis_state[node] = "skipped"
+        metadata.analysis_state[node] = AnalysisState.SKIPPED
         return metadata.analysis_state[node]
 
     try:
@@ -147,9 +147,9 @@ def _analyse_top_output(metadata: DdcheckMetadata, node: str) -> str:
             metadata.load_avg_1min[node] = load_1min
             metadata.load_avg_5min[node] = load_5min
             metadata.load_avg_15min[node] = load_15min
-            metadata.analysis_state[node] = "completed"
+            metadata.analysis_state[node] = AnalysisState.COMPLETED
     except Exception as e:
         logger.error(f"Error reading ttop file {ttop_file}: {e}")
-        metadata.analysis_state[node] = "failed"
+        metadata.analysis_state[node] = AnalysisState.FAILED
 
     return metadata.analysis_state[node]

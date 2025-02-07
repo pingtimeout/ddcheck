@@ -9,7 +9,7 @@ from typing import Optional
 
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
-from ddcheck.storage import EXTRACT_DIRECTORY, DdcheckMetadata
+from ddcheck.storage import EXTRACT_DIRECTORY, AnalysisState, DdcheckMetadata
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -76,7 +76,7 @@ def save_uploaded_tarball(uploaded_file: UploadedFile) -> Optional[DdcheckMetada
         extract_path=str(extract_path),
         nodes=nodes,
         cpu_usage={},
-        analysis_state={node: "not_started" for node in nodes},
+        analysis_state={node: AnalysisState.NOT_STARTED for node in nodes},
         top_times={node: [] for node in nodes},
         load_avg_1min={node: [] for node in nodes},
         load_avg_5min={node: [] for node in nodes},

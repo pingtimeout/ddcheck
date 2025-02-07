@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 
-from ddcheck.storage import DdcheckMetadata
+from ddcheck.storage import AnalysisState, DdcheckMetadata
 from ddcheck.storage.list import get_uploaded_metadata
 from ddcheck.storage.upload import write_metadata_to_disk
 
@@ -16,7 +16,9 @@ if metadata is None:
     st.switch_page("pages/01_Upload.py")
 else:
     # if any of the analysis states is not completed, we redirect to the upload page
-    if any(state != "completed" for state in metadata.analysis_state.values()):
+    if any(
+        state != AnalysisState.COMPLETED for state in metadata.analysis_state.values()
+    ):
         st.error("Analysis not completed for all nodes. Redirecting to upload page...")
         st.session_state.pop("ddcheck_id")
         st.switch_page("pages/01_Upload.py")
@@ -25,7 +27,9 @@ else:
 
     # Add a button to rerun the analysis
     if st.button("Rerun analysis"):
-        metadata.analysis_state = {node: "not_started" for node in metadata.nodes}
+        metadata.analysis_state = {
+            node: AnalysisState.NOT_STARTED for node in metadata.nodes
+        }
         write_metadata_to_disk(metadata)
         st.switch_page("pages/02_Analysis.py")
 

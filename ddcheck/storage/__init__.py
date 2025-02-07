@@ -1,6 +1,15 @@
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum, auto
 from pathlib import Path
+
+
+class AnalysisState(Enum):
+    NOT_STARTED = auto()
+    IN_PROGRESS = auto()
+    COMPLETED = auto()
+    FAILED = auto()
+    SKIPPED = auto()
 
 
 @dataclass
@@ -20,7 +29,7 @@ class DdcheckMetadata:
     load_avg_5min: dict[str, list[float]]
     load_avg_15min: dict[str, list[float]]
     # Tracks state per node: "not_started", "in_progress", "completed", "failed"
-    analysis_state: dict[str, str]
+    analysis_state: dict[str, AnalysisState]
 
     @classmethod
     def from_dict(cls, data: dict) -> "DdcheckMetadata":
@@ -36,7 +45,10 @@ class DdcheckMetadata:
         data["load_avg_1min"] = data.get("load_avg_1min", {})
         data["load_avg_5min"] = data.get("load_avg_5min", {})
         data["load_avg_15min"] = data.get("load_avg_15min", {})
-        data["analysis_state"] = data.get("analysis_state", {})
+        data["analysis_state"] = {
+            node: AnalysisState[state.upper()]
+            for node, state in data.get("analysis_state", {}).items()
+        }
         return cls(**data)
 
     def to_dict(self) -> dict:
@@ -54,7 +66,9 @@ class DdcheckMetadata:
             "load_avg_1min": self.load_avg_1min or {},
             "load_avg_5min": self.load_avg_5min or {},
             "load_avg_15min": self.load_avg_15min or {},
-            "analysis_state": self.analysis_state or {},
+            "analysis_state": {
+                node: state.name.lower() for node, state in self.analysis_state.items()
+            },
         }
 
 
