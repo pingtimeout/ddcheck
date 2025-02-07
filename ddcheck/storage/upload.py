@@ -77,6 +77,10 @@ def save_uploaded_tarball(uploaded_file: UploadedFile) -> Optional[DdcheckMetada
         nodes=nodes,
         cpu_usage={},
         analysis_state={node: "not_started" for node in nodes},
+        top_times={node: [] for node in nodes},
+        load_avg_1min={node: [] for node in nodes},
+        load_avg_5min={node: [] for node in nodes},
+        load_avg_15min={node: [] for node in nodes},
     )
 
     write_metadata_to_disk(metadata)

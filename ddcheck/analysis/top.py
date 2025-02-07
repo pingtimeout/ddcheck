@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from glob import glob
 from pathlib import Path
 from typing import Dict, List
@@ -27,6 +28,54 @@ def parse_cpu_line(cpu_data: Dict[str, List[float]], line: str) -> bool:
     for part in cpu_parts:
         value_str, key = part.strip().split()
         cpu_data[key].append(float(value_str))
+
+    return True
+
+
+def _maybe_parse_time_and_load_average_line(
+    time_data: list[datetime],
+    load_1min: list[float],
+    load_5min: list[float],
+    load_15min: list[float],
+    line: str,
+) -> bool:
+    """
+    Parse a line containing time and load average data and update the respective lists.
+
+    :param time_data: List to append datetime values to
+    :param load_1min: List to append 1-minute load averages to
+    :param load_5min: List to append 5-minute load averages to
+    :param load_15min: List to append 15-minute load averages to
+    :param line: Line to parse
+    :return: True if the line was parsed as time/load data, False otherwise
+    """
+    if not line.startswith("top - "):
+        return False
+
+    # Extract time and load average parts
+    parts = line.split(",  load average: ")
+    if len(parts) != 2:
+        return False
+
+    # Extract and parse time
+    time_str = parts[0].split()[2]  # "top - 15:06:43" -> "15:06:43"
+    try:
+        time_obj = datetime.strptime(time_str, "%H:%M:%S")
+        time_data.append(time_obj)
+    except ValueError:
+        return False
+
+    # Extract load averages
+    load_strs = parts[1].strip().split(", ")
+    if len(load_strs) != 3:
+        return False
+
+    try:
+        load_1min.append(float(load_strs[0]))
+        load_5min.append(float(load_strs[1]))
+        load_15min.append(float(load_strs[2]))
+    except ValueError:
+        return False
 
     return True
 
@@ -69,23 +118,35 @@ def _analyse_top_output(metadata: DdcheckMetadata, node: str) -> str:
         metadata.analysis_state[node] = "skipped"
         return metadata.analysis_state[node]
 
-    # Initialize CPU data collections
-    cpu_data: Dict[str, List[float]] = {
-        "us": [],
-        "sy": [],
-        "ni": [],
-        "id": [],
-        "wa": [],
-        "hi": [],
-        "si": [],
-        "st": [],
-    }
-
     try:
+        # Initialize new data collections
+        time_data: List[datetime] = []
+        load_1min: List[float] = []
+        load_5min: List[float] = []
+        load_15min: List[float] = []
+        cpu_data: Dict[str, List[float]] = {
+            "us": [],
+            "sy": [],
+            "ni": [],
+            "id": [],
+            "wa": [],
+            "hi": [],
+            "si": [],
+            "st": [],
+        }
+
         with open(ttop_file) as f:
             for line in f:
-                parse_cpu_line(cpu_data, line)
+                if not _maybe_parse_time_and_load_average_line(
+                    time_data, load_1min, load_5min, load_15min, line
+                ):
+                    parse_cpu_line(cpu_data, line)
+
             metadata.cpu_usage[node] = cpu_data
+            metadata.top_times[node] = time_data
+            metadata.load_avg_1min[node] = load_1min
+            metadata.load_avg_5min[node] = load_5min
+            metadata.load_avg_15min[node] = load_15min
             metadata.analysis_state[node] = "completed"
     except Exception as e:
         logger.error(f"Error reading ttop file {ttop_file}: {e}")
