@@ -2,6 +2,7 @@ import functools
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
+from typing import Any
 
 
 class Source(Enum):
@@ -88,7 +89,7 @@ class Insight:
         self.qualifier = qualifier
         self.message = message
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Insight):
             return False
         return (
@@ -98,7 +99,7 @@ class Insight:
             and self.message == other.message
         )
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.node, self.source, self.qualifier, self.message))
 
     def to_dict(self) -> dict:
@@ -126,7 +127,7 @@ class DdcheckMetadata:
     extract_path: str
     nodes: list[str]
     analysis_state: dict[str, dict[Source, AnalysisState]]
-    insights: list[Insight]
+    insights: set[Insight]
     # CPU usage per node.
     # Each node is associated to a dict containing a list of values for keys us, sy, ni, id, wa, hi, si, st
     cpu_usage: dict[str, dict[str, list[float]]]
@@ -158,7 +159,7 @@ class DdcheckMetadata:
             node: {source: AnalysisState.NOT_STARTED for source in Source}
             for node in nodes
         }
-        self.insights = []
+        self.insights = set()
         self.cpu_usage = {}
         self.top_times = {node: [] for node in nodes}
         self.load_avg_1min = {node: [] for node in nodes}
@@ -184,9 +185,9 @@ class DdcheckMetadata:
             }
             for node, states in data.get("analysis_state", {}).items()
         }
-        metadata.insights = [
+        metadata.insights = {
             Insight.from_dict(insight) for insight in data.get("insights", [])
-        ]
+        }
         metadata.cpu_usage = data.get("cpu_usage", {})
         metadata.top_times = {
             node: [datetime.strptime(t, "%H:%M:%S") for t in times]
@@ -269,6 +270,25 @@ class DdcheckMetadata:
             for qualifier in result[node]:
                 result[node][qualifier] = sorted(
                     result[node][qualifier], key=lambda i: (i.source, i.message)
+                )
+        return result
+
+    def insights_per_qualifier_and_node(
+        self,
+    ) -> dict[InsightQualifier, dict[str, list[Insight]]]:
+        # Initialize a dictionary with all qualifiers and nodes
+        result: dict[InsightQualifier, dict[str, list[Insight]]] = {
+            qualifier: {node: [] for node in self.nodes}
+            for qualifier in InsightQualifier
+        }
+        # Group insights by qualifier and node
+        for insight in self.insights:
+            result[insight.qualifier][insight.node].append(insight)
+        # Sorting each group by source and then message
+        for qualifier in result:
+            for node in result[qualifier]:
+                result[qualifier][node] = sorted(
+                    result[qualifier][node], key=lambda i: (i.source, i.message)
                 )
         return result
 
