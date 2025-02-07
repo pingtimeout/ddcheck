@@ -20,13 +20,14 @@ else:
         f"Analysing {metadata.original_filename} (ID: {metadata.ddcheck_id})...",
         expanded=True,
     ) as status:
-        # Invoke the ttop analysis function for each node
-        for node in metadata.nodes:
-            if node not in metadata.cpu_usage:
+        # Invoke the ttop analysis function for each node if it has not been analysed yet
+        for node, state in metadata.analysis_state.items():
+            if state == "not_started":
                 with st.empty():
                     st.write(f"Analysing ttop output for {node}...")
+                    analysis_output = analyse_top_output(metadata, node)
                     st.write(
-                        f"Result of ttop output analysis for {node}: {analyse_top_output(metadata, node)}"
+                        f"Result of ttop output analysis for {node}: {analysis_output}"
                     )
             else:
                 st.write(f"Skipping analysis for {node} - already completed")

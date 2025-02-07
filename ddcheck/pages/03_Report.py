@@ -3,6 +3,7 @@ import streamlit as st
 
 from ddcheck.storage import DdcheckMetadata
 from ddcheck.storage.list import get_uploaded_metadata
+from ddcheck.storage.upload import write_metadata_to_disk
 
 st.set_page_config(layout="wide")
 
@@ -21,6 +22,12 @@ else:
         st.switch_page("pages/01_Upload.py")
 
     st.title(f"Report for {metadata.original_filename}")
+
+    # Add a button to rerun the analysis
+    if st.button("Rerun analysis"):
+        metadata.analysis_state = {node: "not_started" for node in metadata.nodes}
+        write_metadata_to_disk(metadata)
+        st.switch_page("pages/02_Analysis.py")
 
     # Show a selector with all the nodes
     selected_node = st.selectbox("Select a node", metadata.nodes)
