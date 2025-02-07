@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 
-from ddcheck.storage import AnalysisState, DdcheckMetadata
+from ddcheck.storage import AnalysisState, DdcheckMetadata, InsightQualifier
 from ddcheck.storage.list import get_uploaded_metadata
 from ddcheck.storage.upload import write_metadata_to_disk
 
@@ -28,6 +28,23 @@ else:
         }
         write_metadata_to_disk(metadata)
         st.switch_page("pages/02_Analysis.py")
+
+    st.subheader("Insights")
+    insights_per_qualifier_and_node = metadata.insights_per_qualifier_and_node()
+    labels_per_qualifier = {
+        InsightQualifier.BAD: ("🔴"),
+        InsightQualifier.INTERESTING: ("🟡"),
+        InsightQualifier.OK: ("🟢"),
+    }
+    for qualifier in labels_per_qualifier:
+        insights_per_node = insights_per_qualifier_and_node.get(qualifier, {})
+        for node, insights in insights_per_node.items():
+            for insight in insights:
+                st.write(f"{labels_per_qualifier[qualifier]} - {node}: {insight}")
+    else:
+        st.write("No insights found")
+
+    st.subheader("Per-node metrics")
 
     # Show a selector with all the nodes
     selected_node = st.selectbox("Select a node", metadata.nodes)
