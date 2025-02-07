@@ -9,6 +9,13 @@ class Source(Enum):
     TOP = auto()
     OS_INFO = auto()
 
+    def to_str(self) -> str:
+        return self.name.lower()
+
+    @classmethod
+    def from_str(cls, source: str) -> "Source":
+        return Source[source.upper()]
+
 
 class AnalysisState(Enum):
     NOT_STARTED = auto()
@@ -115,7 +122,7 @@ class DdcheckMetadata:
         data["load_avg_15min"] = data.get("load_avg_15min", {})
         data["analysis_state"] = {
             node: {
-                Source[source.upper()]: AnalysisState[state.upper()]
+                Source.from_str(source): AnalysisState[state.upper()]
                 for source, state in states.items()
             }
             for node, states in data.get("analysis_state", {}).items()
@@ -142,7 +149,7 @@ class DdcheckMetadata:
             "load_avg_15min": self.load_avg_15min or {},
             "analysis_state": {
                 node: {
-                    source.name.lower(): state.name.lower()
+                    source.to_str(): state.name.lower()
                     for source, state in states.items()
                 }
                 for node, states in self.analysis_state.items()
