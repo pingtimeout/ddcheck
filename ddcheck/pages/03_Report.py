@@ -47,9 +47,6 @@ else:
                 inplace=True,
             )
             df["Total"] = 100 - df["Idle"]
-            print(df)
-            print()
-            print(df.index)
             # Create a line chart with the CPU usage computed as 100 - idle.  Idle CPU usage is displayed with a green line.
             st.line_chart(
                 df,
