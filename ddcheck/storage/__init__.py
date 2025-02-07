@@ -24,6 +24,13 @@ class AnalysisState(Enum):
     FAILED = auto()
     SKIPPED = auto()
 
+    def to_str(self) -> str:
+        return self.name.lower()
+
+    @classmethod
+    def from_str(cls, state: str) -> "AnalysisState":
+        return AnalysisState[state.upper()]
+
     def reduce_with(self, other: "AnalysisState") -> "AnalysisState":
         """Reduces this state with another one based on priority rules.
 
@@ -122,7 +129,7 @@ class DdcheckMetadata:
         data["load_avg_15min"] = data.get("load_avg_15min", {})
         data["analysis_state"] = {
             node: {
-                Source.from_str(source): AnalysisState[state.upper()]
+                Source.from_str(source): AnalysisState.from_str(state)
                 for source, state in states.items()
             }
             for node, states in data.get("analysis_state", {}).items()
@@ -149,7 +156,7 @@ class DdcheckMetadata:
             "load_avg_15min": self.load_avg_15min or {},
             "analysis_state": {
                 node: {
-                    source.to_str(): state.name.lower()
+                    source.to_str(): state.to_str()
                     for source, state in states.items()
                 }
                 for node, states in self.analysis_state.items()
