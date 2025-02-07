@@ -12,6 +12,40 @@ class AnalysisState(Enum):
     SKIPPED = auto()
 
 
+def reduce_analysis_states(
+    state1: AnalysisState, state2: AnalysisState
+) -> AnalysisState:
+    """Reduces two analysis states into a single one based on priority rules.
+
+    Priority order (highest to lowest):
+    1. FAILED
+    2. IN_PROGRESS
+    3. NOT_STARTED
+    4. COMPLETED
+    5. SKIPPED
+
+    Args:
+        state1: First analysis state
+        state2: Second analysis state
+
+    Returns:
+        AnalysisState representing the reduced state
+    """
+    if AnalysisState.FAILED in (state1, state2):
+        return AnalysisState.FAILED
+
+    if AnalysisState.IN_PROGRESS in (state1, state2):
+        return AnalysisState.IN_PROGRESS
+
+    if AnalysisState.NOT_STARTED in (state1, state2):
+        return AnalysisState.NOT_STARTED
+
+    if AnalysisState.COMPLETED in (state1, state2):
+        return AnalysisState.COMPLETED
+
+    return AnalysisState.SKIPPED
+
+
 @dataclass
 class DdcheckMetadata:
     original_filename: str
