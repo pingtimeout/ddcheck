@@ -1,5 +1,4 @@
 import functools
-from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
@@ -75,7 +74,6 @@ class InsightQualifier(Enum):
         return InsightQualifier[qualifier.upper()]
 
 
-@dataclass
 class Insight:
     node: str
     source: Source
@@ -91,13 +89,13 @@ class Insight:
         self.message = message
 
 
-@dataclass
 class DdcheckMetadata:
     original_filename: str
     ddcheck_id: str
     upload_time: datetime
     extract_path: str
     nodes: list[str]
+    analysis_state: dict[str, dict[Source, AnalysisState]]
     # CPU usage per node.
     # Each node is associated to a dict containing a list of values for keys us, sy, ni, id, wa, hi, si, st
     cpu_usage: dict[str, dict[str, list[float]]]
@@ -108,36 +106,64 @@ class DdcheckMetadata:
     load_avg_5min: dict[str, list[float]]
     load_avg_15min: dict[str, list[float]]
     # Tracks State per node and source
-    analysis_state: dict[str, dict[Source, AnalysisState]]
     total_memory_kb: dict[str, int]
     total_cpus: dict[str, int]
     online_cpus: dict[str, list[int]]
 
+    def __init__(
+        self,
+        original_filename: str,
+        ddcheck_id: str,
+        upload_time: datetime,
+        extract_path: str,
+        nodes: list[str],
+    ):
+        self.original_filename = original_filename
+        self.ddcheck_id = ddcheck_id
+        self.upload_time = upload_time
+        self.extract_path = extract_path
+        self.nodes = nodes
+        self.analysis_state = {
+            node: {source: AnalysisState.NOT_STARTED for source in Source}
+            for node in nodes
+        }
+        self.cpu_usage = {}
+        self.top_times = {node: [] for node in nodes}
+        self.load_avg_1min = {node: [] for node in nodes}
+        self.load_avg_5min = {node: [] for node in nodes}
+        self.load_avg_15min = {node: [] for node in nodes}
+        self.total_memory_kb = {}
+        self.total_cpus = {}
+        self.online_cpus = {}
+
     @classmethod
     def from_dict(cls, data: dict) -> "DdcheckMetadata":
-        data["upload_time"] = datetime.fromisoformat(data["upload_time"])
-        data["nodes"] = data["nodes"]
-        data["cpu_usage"] = data.get("cpu_usage", {})
-        # Convert time strings to datetime objects
-        top_times_dict = data.get("top_times", {})
-        data["top_times"] = {
-            node: [datetime.strptime(t, "%H:%M:%S") for t in times]
-            for node, times in top_times_dict.items()
-        }
-        data["load_avg_1min"] = data.get("load_avg_1min", {})
-        data["load_avg_5min"] = data.get("load_avg_5min", {})
-        data["load_avg_15min"] = data.get("load_avg_15min", {})
-        data["analysis_state"] = {
+        metadata = DdcheckMetadata(
+            original_filename=data["original_filename"],
+            ddcheck_id=data["ddcheck_id"],
+            upload_time=datetime.fromisoformat(data["upload_time"]),
+            extract_path=data["extract_path"],
+            nodes=data["nodes"],
+        )
+        metadata.analysis_state = {
             node: {
                 Source.from_str(source): AnalysisState.from_str(state)
                 for source, state in states.items()
             }
             for node, states in data.get("analysis_state", {}).items()
         }
-        data["total_memory_kb"] = data.get("total_memory_kb", {})
-        data["total_cpus"] = data.get("total_cpus", {})
-        data["online_cpus"] = data.get("online_cpus", {})
-        return cls(**data)
+        metadata.cpu_usage = data.get("cpu_usage", {})
+        metadata.top_times = {
+            node: [datetime.strptime(t, "%H:%M:%S") for t in times]
+            for node, times in data.get("top_times", {}).items()
+        }
+        metadata.load_avg_1min = data.get("load_avg_1min", {})
+        metadata.load_avg_5min = data.get("load_avg_5min", {})
+        metadata.load_avg_15min = data.get("load_avg_15min", {})
+        metadata.total_memory_kb = data.get("total_memory_kb", {})
+        metadata.total_cpus = data.get("total_cpus", {})
+        metadata.online_cpus = data.get("online_cpus", {})
+        return metadata
 
     def to_dict(self) -> dict:
         return {
@@ -156,8 +182,7 @@ class DdcheckMetadata:
             "load_avg_15min": self.load_avg_15min or {},
             "analysis_state": {
                 node: {
-                    source.to_str(): state.to_str()
-                    for source, state in states.items()
+                    source.to_str(): state.to_str() for source, state in states.items()
                 }
                 for node, states in self.analysis_state.items()
             },
