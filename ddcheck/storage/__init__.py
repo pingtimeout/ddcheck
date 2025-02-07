@@ -1,3 +1,4 @@
+import functools
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, auto
@@ -11,39 +12,35 @@ class AnalysisState(Enum):
     FAILED = auto()
     SKIPPED = auto()
 
+    def reduce_with(self, other: "AnalysisState") -> "AnalysisState":
+        """Reduces this state with another one based on priority rules.
 
-def reduce_analysis_states(
-    state1: AnalysisState, state2: AnalysisState
-) -> AnalysisState:
-    """Reduces two analysis states into a single one based on priority rules.
+        Priority order (highest to lowest):
+        1. FAILED
+        2. IN_PROGRESS
+        3. NOT_STARTED
+        4. COMPLETED
+        5. SKIPPED
 
-    Priority order (highest to lowest):
-    1. FAILED
-    2. IN_PROGRESS
-    3. NOT_STARTED
-    4. COMPLETED
-    5. SKIPPED
+        Args:
+            other: Another analysis state to reduce with
 
-    Args:
-        state1: First analysis state
-        state2: Second analysis state
+        Returns:
+            AnalysisState representing the reduced state
+        """
+        if AnalysisState.FAILED in (self, other):
+            return AnalysisState.FAILED
 
-    Returns:
-        AnalysisState representing the reduced state
-    """
-    if AnalysisState.FAILED in (state1, state2):
-        return AnalysisState.FAILED
+        if AnalysisState.IN_PROGRESS in (self, other):
+            return AnalysisState.IN_PROGRESS
 
-    if AnalysisState.IN_PROGRESS in (state1, state2):
-        return AnalysisState.IN_PROGRESS
+        if AnalysisState.NOT_STARTED in (self, other):
+            return AnalysisState.NOT_STARTED
 
-    if AnalysisState.NOT_STARTED in (state1, state2):
-        return AnalysisState.NOT_STARTED
+        if AnalysisState.COMPLETED in (self, other):
+            return AnalysisState.COMPLETED
 
-    if AnalysisState.COMPLETED in (state1, state2):
-        return AnalysisState.COMPLETED
-
-    return AnalysisState.SKIPPED
+        return AnalysisState.SKIPPED
 
 
 @dataclass
@@ -117,12 +114,15 @@ class DdcheckMetadata:
         if not self.nodes:
             return AnalysisState.NOT_STARTED
 
-        result = AnalysisState.SKIPPED  # Start with lowest priority
-        for node in self.nodes:
-            state = self.analysis_state.get(node, AnalysisState.NOT_STARTED)
-            result = reduce_analysis_states(result, state)
-
-        return result
+        states = (
+            self.analysis_state.get(node, AnalysisState.NOT_STARTED)
+            for node in self.nodes
+        )
+        return functools.reduce(
+            lambda state1, state2: state1.reduce_with(state2),
+            states,
+            AnalysisState.SKIPPED,  # Start with lowest priority
+        )
 
 
 EXTRACT_DIRECTORY = Path("/tmp/extracts")
