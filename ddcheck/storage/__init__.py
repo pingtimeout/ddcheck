@@ -105,6 +105,25 @@ class DdcheckMetadata:
             },
         }
 
+    def get_overall_analysis_state(self) -> AnalysisState:
+        """Returns the overall analysis state by reducing all node states.
+        
+        If there are no nodes, returns NOT_STARTED.
+        Otherwise reduces all node states using priority rules.
+        
+        Returns:
+            AnalysisState representing the overall state of all nodes
+        """
+        if not self.nodes:
+            return AnalysisState.NOT_STARTED
+            
+        result = AnalysisState.SKIPPED  # Start with lowest priority
+        for node in self.nodes:
+            state = self.analysis_state.get(node, AnalysisState.NOT_STARTED)
+            result = reduce_analysis_states(result, state)
+            
+        return result
+
 
 EXTRACT_DIRECTORY = Path("/tmp/extracts")
 
