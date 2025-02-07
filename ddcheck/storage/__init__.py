@@ -48,6 +48,35 @@ class AnalysisState(Enum):
         return AnalysisState.NOT_STARTED
 
 
+class InsightQualifier(Enum):
+    OK = auto()
+    INTERESTING = auto()
+    BAD = auto()
+
+    def to_str(self) -> str:
+        return self.name.lower()
+
+    @classmethod
+    def from_str(cls, qualifier: str) -> "InsightQualifier":
+        return InsightQualifier[qualifier.upper()]
+
+
+@dataclass
+class Insight:
+    node: str
+    source: Source
+    qualifier: InsightQualifier
+    message: str
+
+    def __init__(
+        self, node: str, source: Source, qualifier: InsightQualifier, message: str
+    ):
+        self.node = node
+        self.source = source
+        self.qualifier = qualifier
+        self.message = message
+
+
 @dataclass
 class DdcheckMetadata:
     original_filename: str
