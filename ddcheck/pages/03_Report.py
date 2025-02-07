@@ -30,7 +30,24 @@ else:
 
         if selected_node in metadata.cpu_usage:
             df = pd.DataFrame(metadata.cpu_usage[selected_node])
-
+            df.rename(
+                columns={
+                    "us": "User",
+                    "sy": "System",
+                    "id": "Idle",
+                    "wa": "I/O Wait",
+                },
+                inplace=True,
+            )
+            df["Total"] = 100 - df["Idle"]
+            print(df)
+            print()
+            print(df.index)
             # Create a line chart with the CPU usage computed as 100 - idle.  Idle CPU usage is displayed with a green line.
-            df["Total"] = 100 - df["id"]
-            st.line_chart(df["Total"], use_container_width=True, color="#1f77b4")
+            st.line_chart(
+                df,
+                y=["Total", "User", "System", "I/O Wait"],
+                use_container_width=True,
+                color=["#7f7f7f", "#1f77b4", "#d62728", "#ff7f0e"],
+            )
+            # st.line_chart(df[["Total", "User", "System", "I/O Wait"]], use_container_width=True, color=["#7f7f7f", "#1f77b4", "#d62728", "#ff7f0e"])
