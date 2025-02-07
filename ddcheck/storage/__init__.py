@@ -153,16 +153,20 @@ class DdcheckMetadata:
         self.upload_time = upload_time
         self.extract_path = extract_path
         self.nodes = nodes
+        self.reset()
+
+    def reset(self) -> None:
+        """Resets the analysis state and insights."""
         self.analysis_state = {
             node: {source: AnalysisState.NOT_STARTED for source in Source}
-            for node in nodes
+            for node in self.nodes
         }
         self.insights = set()
         self.cpu_usage = {}
-        self.top_times = {node: [] for node in nodes}
-        self.load_avg_1min = {node: [] for node in nodes}
-        self.load_avg_5min = {node: [] for node in nodes}
-        self.load_avg_15min = {node: [] for node in nodes}
+        self.top_times = {node: [] for node in self.nodes}
+        self.load_avg_1min = {node: [] for node in self.nodes}
+        self.load_avg_5min = {node: [] for node in self.nodes}
+        self.load_avg_15min = {node: [] for node in self.nodes}
         self.total_memory_kb = {}
 
     @classmethod

@@ -1,7 +1,8 @@
 import pandas as pd
 import streamlit as st
+from natsort import natsorted
 
-from ddcheck.storage import AnalysisState, DdcheckMetadata, InsightQualifier
+from ddcheck.storage import DdcheckMetadata, InsightQualifier
 from ddcheck.storage.list import get_uploaded_metadata
 from ddcheck.storage.upload import write_metadata_to_disk
 
@@ -19,13 +20,7 @@ else:
 
     # Add a button to rerun the analysis
     if st.button("Rerun analysis"):
-        metadata.analysis_state = {
-            node: {
-                state: AnalysisState.NOT_STARTED
-                for state in metadata.analysis_state[node]
-            }
-            for node in metadata.nodes
-        }
+        metadata.reset()
         write_metadata_to_disk(metadata)
         st.switch_page("pages/02_Analysis.py")
 
@@ -38,9 +33,12 @@ else:
     }
     for qualifier in labels_per_qualifier:
         insights_per_node = insights_per_qualifier_and_node.get(qualifier, {})
-        for node, insights in insights_per_node.items():
+        if insights_per_node:
+            st.write(f"{labels_per_qualifier[qualifier]} **{qualifier.name}**")
+        nodes = insights_per_node.items()
+        for node, insights in natsorted(nodes):
             for insight in insights:
-                st.write(f"{labels_per_qualifier[qualifier]} - {node}: {insight}")
+                st.write(f"* {node}: {insight.message}")
     else:
         st.write("No insights found")
 
