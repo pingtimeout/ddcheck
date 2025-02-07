@@ -88,6 +88,23 @@ class Insight:
         self.qualifier = qualifier
         self.message = message
 
+    def to_dict(self) -> dict:
+        return {
+            "node": self.node,
+            "source": self.source.to_str(),
+            "qualifier": self.qualifier.to_str(),
+            "message": self.message,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Insight":
+        return Insight(
+            node=data["node"],
+            source=Source.from_str(data["source"]),
+            qualifier=InsightQualifier.from_str(data["qualifier"]),
+            message=data["message"],
+        )
+
 
 class DdcheckMetadata:
     original_filename: str
@@ -96,6 +113,7 @@ class DdcheckMetadata:
     extract_path: str
     nodes: list[str]
     analysis_state: dict[str, dict[Source, AnalysisState]]
+    insights: list[Insight]
     # CPU usage per node.
     # Each node is associated to a dict containing a list of values for keys us, sy, ni, id, wa, hi, si, st
     cpu_usage: dict[str, dict[str, list[float]]]
@@ -127,6 +145,7 @@ class DdcheckMetadata:
             node: {source: AnalysisState.NOT_STARTED for source in Source}
             for node in nodes
         }
+        self.insights = []
         self.cpu_usage = {}
         self.top_times = {node: [] for node in nodes}
         self.load_avg_1min = {node: [] for node in nodes}
@@ -152,6 +171,9 @@ class DdcheckMetadata:
             }
             for node, states in data.get("analysis_state", {}).items()
         }
+        metadata.insights = [
+            Insight.from_dict(insight) for insight in data.get("insights", [])
+        ]
         metadata.cpu_usage = data.get("cpu_usage", {})
         metadata.top_times = {
             node: [datetime.strptime(t, "%H:%M:%S") for t in times]
@@ -172,6 +194,7 @@ class DdcheckMetadata:
             "upload_time": self.upload_time.isoformat(),
             "extract_path": self.extract_path,
             "nodes": self.nodes,
+            "insights": [insight.to_dict() for insight in self.insights],
             "cpu_usage": self.cpu_usage or {},
             "top_times": {
                 node: [t.strftime("%H:%M:%S") for t in times]
@@ -216,6 +239,25 @@ class DdcheckMetadata:
             all_states,
             AnalysisState.NOT_STARTED,
         )
+
+    def insights_per_node_and_qualifier(
+        self,
+    ) -> dict[str, dict[InsightQualifier, list[Insight]]]:
+        # Initialize a dictionary with all nodes and qualifiers
+        result: dict[str, dict[InsightQualifier, list[Insight]]] = {
+            node: {qualifier: [] for qualifier in InsightQualifier}
+            for node in self.nodes
+        }
+        # Group insights by node and qualifier
+        for insight in self.insights:
+            result[insight.node][insight.qualifier].append(insight)
+        # Sorting each group by source and then message
+        for node in result:
+            for qualifier in result[node]:
+                result[node][qualifier] = sorted(
+                    result[node][qualifier], key=lambda i: (i.source, i.message)
+                )
+        return result
 
 
 EXTRACT_DIRECTORY = Path("/tmp/extracts")
