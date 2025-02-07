@@ -7,7 +7,7 @@ from pathlib import Path
 
 class Source(Enum):
     TOP = auto()
-    OS_INFO = auto()  # Add this line
+    OS_INFO = auto()
 
 
 class AnalysisState(Enum):
