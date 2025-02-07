@@ -139,8 +139,6 @@ class DdcheckMetadata:
     load_avg_15min: dict[str, list[float]]
     # Tracks State per node and source
     total_memory_kb: dict[str, int]
-    total_cpus: dict[str, int]
-    online_cpus: dict[str, list[int]]
 
     def __init__(
         self,
@@ -166,8 +164,6 @@ class DdcheckMetadata:
         self.load_avg_5min = {node: [] for node in nodes}
         self.load_avg_15min = {node: [] for node in nodes}
         self.total_memory_kb = {}
-        self.total_cpus = {}
-        self.online_cpus = {}
 
     @classmethod
     def from_dict(cls, data: dict) -> "DdcheckMetadata":
@@ -197,8 +193,6 @@ class DdcheckMetadata:
         metadata.load_avg_5min = data.get("load_avg_5min", {})
         metadata.load_avg_15min = data.get("load_avg_15min", {})
         metadata.total_memory_kb = data.get("total_memory_kb", {})
-        metadata.total_cpus = data.get("total_cpus", {})
-        metadata.online_cpus = data.get("online_cpus", {})
         return metadata
 
     def to_dict(self) -> dict:
@@ -224,8 +218,6 @@ class DdcheckMetadata:
                 for node, states in self.analysis_state.items()
             },
             "total_memory_kb": self.total_memory_kb or {},
-            "total_cpus": self.total_cpus or {},
-            "online_cpus": self.online_cpus or {},
         }
 
     def get_overall_analysis_state(self) -> AnalysisState:

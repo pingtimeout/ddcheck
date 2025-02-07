@@ -2,8 +2,15 @@ import logging
 import re
 from glob import glob
 from pathlib import Path
+from typing import Optional
 
-from ddcheck.storage import AnalysisState, DdcheckMetadata, Source
+from ddcheck.storage import (
+    AnalysisState,
+    DdcheckMetadata,
+    Insight,
+    InsightQualifier,
+    Source,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +30,6 @@ def _parse_online_cpus(online_cpus_str: str) -> list[int]:
 def analyse_os_info(metadata: DdcheckMetadata, node: str) -> AnalysisState:
     # Initialize new fields if they don't exist
     metadata.total_memory_kb.setdefault(node, 0)
-    metadata.total_cpus.setdefault(node, 0)
-    metadata.online_cpus.setdefault(node, [])
 
     # If node does not exist in metadata, log an error and mark it as skipped
     if node not in metadata.nodes:
@@ -59,6 +64,9 @@ def analyse_os_info(metadata: DdcheckMetadata, node: str) -> AnalysisState:
         return metadata.analysis_state[node][Source.OS_INFO]
 
     try:
+        total_cpus: Optional[int] = None
+        online_cpus: Optional[str] = None
+        total_online_cpus: Optional[int] = None
         with open(os_info_file) as f:
             content = f.read()
 
@@ -70,18 +78,25 @@ def analyse_os_info(metadata: DdcheckMetadata, node: str) -> AnalysisState:
             # Parse total CPUs
             cpu_match = re.search(r"CPU\(s\):\s+(\d+)", content)
             if cpu_match:
-                metadata.total_cpus[node] = int(cpu_match.group(1))
+                total_cpus = int(cpu_match.group(1))
 
             # Parse online CPUs
             online_match = re.search(r"On-line CPU\(s\) list:\s+([0-9,-]+)", content)
             if online_match:
-                metadata.online_cpus[node] = _parse_online_cpus(online_match.group(1))
+                online_cpus = online_match.group(1)
+                total_online_cpus = len(_parse_online_cpus(online_cpus))
 
             # Verify CPU counts match
-            if metadata.total_cpus[node] != len(metadata.online_cpus[node]):
-                logger.warning(
-                    f"Node {node} has {metadata.total_cpus[node]} total CPUs but "
-                    f"{len(metadata.online_cpus[node])} online CPUs"
+            if total_cpus != total_online_cpus:
+                metadata.insights.add(
+                    Insight(
+                        node=node,
+                        source=Source.OS_INFO,
+                        qualifier=InsightQualifier.INTERESTING,
+                        message=(
+                            f"There are {total_cpus} CPUs in total but they are not all enabled, only {total_online_cpus} of them are online ({online_cpus})."
+                        ),
+                    )
                 )
 
             metadata.analysis_state[node][Source.OS_INFO] = AnalysisState.COMPLETED
