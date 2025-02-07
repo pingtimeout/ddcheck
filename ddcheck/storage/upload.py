@@ -41,8 +41,14 @@ def save_uploaded_tarball(uploaded_file: UploadedFile) -> Optional[DdcheckMetada
     try:
         logger.debug("Extracting tarball contents")
         with tarfile.open(fileobj=uploaded_file) as tar:
-            # The next lines extract the tarball contents to the extract_path.  Update it so that any directory contained at any level in the tarball is skipped if its name is either `jfr`, `logs` or `queries`. AI!
-            tar.extractall(path=extract_path)
+            def filter_members(members):
+                for member in members:
+                    if any(part in member.name for part in ['jfr', 'logs', 'queries']):
+                        logger.debug(f"Skipping directory: {member.name}")
+                        continue
+                    yield member
+
+            tar.extractall(path=extract_path, members=filter_members(tar.getmembers()))
     except tarfile.ReadError:
         # The tarball could not be read, mark it as invalid
         logger.error("Failed to read tarball - file might be corrupted")
