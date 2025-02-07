@@ -88,6 +88,19 @@ class Insight:
         self.qualifier = qualifier
         self.message = message
 
+    def __eq__(self, other):
+        if not isinstance(other, Insight):
+            return False
+        return (
+            self.node == other.node
+            and self.source == other.source
+            and self.qualifier == other.qualifier
+            and self.message == other.message
+        )
+
+    def __hash__(self):
+        return hash((self.node, self.source, self.qualifier, self.message))
+
     def to_dict(self) -> dict:
         return {
             "node": self.node,
