@@ -23,14 +23,15 @@ else:
         expanded=True,
     ) as status:
         # Invoke the ttop analysis function for each node if it has not been analysed yet
-        for node, state in metadata.analysis_state.items():
-            if state == AnalysisState.NOT_STARTED:
+        for node, states in metadata.analysis_state.items():
+            # if any of the states is COMPLETE, skip the node
+            if AnalysisState.COMPLETED in states.values():
+                st.write(f"Skipping analysis for {node} - already completed")
+            else:
                 with st.empty():
                     st.write(f"Analysing node {node}...")
                     analysis_output = analyse_tarball(metadata, node).name.lower()
                     time.sleep(0.1)
                     st.write(f"Analysis of node {node}: {analysis_output}")
-            else:
-                st.write(f"Skipping analysis for {node} - already completed")
         status.update(label="Analysis complete", state="complete")
         st.switch_page("pages/03_Report.py")

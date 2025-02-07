@@ -5,6 +5,10 @@ from enum import Enum, auto
 from pathlib import Path
 
 
+class Source(Enum):
+    TOP = auto()
+
+
 class AnalysisState(Enum):
     NOT_STARTED = auto()
     IN_PROGRESS = auto()
@@ -59,8 +63,8 @@ class DdcheckMetadata:
     load_avg_1min: dict[str, list[float]]
     load_avg_5min: dict[str, list[float]]
     load_avg_15min: dict[str, list[float]]
-    # Tracks state per node: "not_started", "in_progress", "completed", "failed"
-    analysis_state: dict[str, AnalysisState]
+    # Tracks state per node and source
+    analysis_state: dict[str, dict[Source, AnalysisState]]
 
     @classmethod
     def from_dict(cls, data: dict) -> "DdcheckMetadata":
@@ -77,8 +81,11 @@ class DdcheckMetadata:
         data["load_avg_5min"] = data.get("load_avg_5min", {})
         data["load_avg_15min"] = data.get("load_avg_15min", {})
         data["analysis_state"] = {
-            node: AnalysisState[state.upper()]
-            for node, state in data.get("analysis_state", {}).items()
+            node: {
+                Source[source.upper()]: AnalysisState[state.upper()]
+                for source, state in states.items()
+            }
+            for node, states in data.get("analysis_state", {}).items()
         }
         return cls(**data)
 
@@ -98,30 +105,38 @@ class DdcheckMetadata:
             "load_avg_5min": self.load_avg_5min or {},
             "load_avg_15min": self.load_avg_15min or {},
             "analysis_state": {
-                node: state.name.lower() for node, state in self.analysis_state.items()
+                node: {
+                    source.name.lower(): state.name.lower()
+                    for source, state in states.items()
+                }
+                for node, states in self.analysis_state.items()
             },
         }
 
     def get_overall_analysis_state(self) -> AnalysisState:
-        """Returns the overall analysis state by reducing all node states.
+        """Returns the overall analysis state by reducing all node and source states.
 
         If there are no nodes, returns NOT_STARTED.
-        Otherwise reduces all node states using priority rules.
+        Otherwise reduces all states using priority rules.
 
         Returns:
-            AnalysisState representing the overall state of all nodes
+            AnalysisState representing the overall state of all nodes and sources
         """
         if not self.nodes:
             return AnalysisState.NOT_STARTED
 
-        states = (
-            self.analysis_state.get(node, AnalysisState.NOT_STARTED)
+        # Get all states from all nodes and sources
+        all_states = (
+            state
             for node in self.nodes
+            for state in self.analysis_state.get(node, {}).values()
         )
+
+        # Start with lowest priority and reduce all states
         return functools.reduce(
             lambda state1, state2: state1.reduce_with(state2),
-            states,
-            AnalysisState.SKIPPED,  # Start with lowest priority
+            all_states,
+            AnalysisState.SKIPPED,
         )
 
 

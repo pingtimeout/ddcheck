@@ -15,20 +15,16 @@ metadata: DdcheckMetadata | None = get_uploaded_metadata(st.session_state.ddchec
 if metadata is None:
     st.switch_page("pages/01_Upload.py")
 else:
-    # if any of the analysis states is not completed, we redirect to the upload page
-    if any(
-        state != AnalysisState.COMPLETED for state in metadata.analysis_state.values()
-    ):
-        st.error("Analysis not completed for all nodes. Redirecting to upload page...")
-        st.session_state.pop("ddcheck_id")
-        st.switch_page("pages/01_Upload.py")
-
     st.title(f"Report for {metadata.original_filename}")
 
     # Add a button to rerun the analysis
     if st.button("Rerun analysis"):
         metadata.analysis_state = {
-            node: AnalysisState.NOT_STARTED for node in metadata.nodes
+            node: {
+                state: AnalysisState.NOT_STARTED
+                for state in metadata.analysis_state[node]
+            }
+            for node in metadata.nodes
         }
         write_metadata_to_disk(metadata)
         st.switch_page("pages/02_Analysis.py")
