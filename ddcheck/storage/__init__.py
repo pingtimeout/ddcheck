@@ -30,8 +30,8 @@ class AnalysisState(Enum):
     def from_str(cls, state: str) -> "AnalysisState":
         return AnalysisState[state.upper()]
 
-    def reduce_with(self, other: "AnalysisState") -> "AnalysisState":
-        """Reduces this state with another one based on priority rules.
+    def max(self, other: "AnalysisState") -> "AnalysisState":
+        """Returns the state with the higher priority between self and other.
 
         Priority order (highest to lowest):
         1. FAILED
@@ -41,10 +41,10 @@ class AnalysisState(Enum):
         5. NOT_STARTED
 
         Args:
-            other: Another analysis state to reduce with
+            other: Another analysis state to compare against
 
         Returns:
-            AnalysisState representing the reduced state
+            AnalysisState representing the most important state
         """
         if AnalysisState.FAILED in (self, other):
             return AnalysisState.FAILED
@@ -212,7 +212,7 @@ class DdcheckMetadata:
 
         # Start with lowest priority and reduce all states
         return functools.reduce(
-            lambda state1, state2: state1.reduce_with(state2),
+            lambda state1, state2: state1.max(state2),
             all_states,
             AnalysisState.NOT_STARTED,
         )
