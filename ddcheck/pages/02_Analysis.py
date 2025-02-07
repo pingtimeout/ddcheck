@@ -1,6 +1,8 @@
+import time
+
 import streamlit as st
 
-from ddcheck.analysis.top import analyse_top_output
+from ddcheck.analysis.analysis import analyse_tarball
 from ddcheck.storage import AnalysisState, DdcheckMetadata
 from ddcheck.storage.list import get_uploaded_metadata
 
@@ -24,11 +26,10 @@ else:
         for node, state in metadata.analysis_state.items():
             if state == AnalysisState.NOT_STARTED:
                 with st.empty():
-                    st.write(f"Analysing ttop output for {node}...")
-                    analysis_output = analyse_top_output(metadata, node).name.lower()
-                    st.write(
-                        f"Result of ttop output analysis for {node}: {analysis_output}"
-                    )
+                    st.write(f"Analysing node {node}...")
+                    analysis_output = analyse_tarball(metadata, node).name.lower()
+                    time.sleep(0.1)
+                    st.write(f"Analysis of node {node}: {analysis_output}")
             else:
                 st.write(f"Skipping analysis for {node} - already completed")
         status.update(label="Analysis complete", state="complete")
