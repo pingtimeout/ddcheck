@@ -10,7 +10,14 @@ from ddcheck.storage.upload import write_metadata_to_disk
 logger = logging.getLogger(__name__)
 
 
-def parse_cpu_line(cpu_data: Dict[str, List[float]], line: str) -> bool:
+def analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
+    try:
+        return _analyse_top_output(metadata, node)
+    finally:
+        write_metadata_to_disk(metadata)
+
+
+def _maybe_parse_cpu_line(cpu_data: Dict[str, List[float]], line: str) -> bool:
     """
     Parse a line containing CPU data and update the cpu_data dictionary.
 
@@ -80,13 +87,6 @@ def _maybe_parse_time_and_load_average_line(
     return True
 
 
-def analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
-    try:
-        return _analyse_top_output(metadata, node)
-    finally:
-        write_metadata_to_disk(metadata)
-
-
 def _analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
     # If node does not exist in metadata, log an error and mark it as skipped
     if node not in metadata.nodes:
@@ -140,7 +140,7 @@ def _analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
                 if not _maybe_parse_time_and_load_average_line(
                     time_data, load_1min, load_5min, load_15min, line
                 ):
-                    parse_cpu_line(cpu_data, line)
+                    _maybe_parse_cpu_line(cpu_data, line)
 
             metadata.cpu_usage[node] = cpu_data
             metadata.top_times[node] = time_data
