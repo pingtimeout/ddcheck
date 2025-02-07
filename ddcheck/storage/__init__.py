@@ -23,9 +23,9 @@ class AnalysisState(Enum):
         Priority order (highest to lowest):
         1. FAILED
         2. IN_PROGRESS
-        3. NOT_STARTED
-        4. COMPLETED
-        5. SKIPPED
+        3. COMPLETED
+        4. SKIPPED
+        5. NOT_STARTED
 
         Args:
             other: Another analysis state to reduce with
@@ -39,13 +39,13 @@ class AnalysisState(Enum):
         if AnalysisState.IN_PROGRESS in (self, other):
             return AnalysisState.IN_PROGRESS
 
-        if AnalysisState.NOT_STARTED in (self, other):
-            return AnalysisState.NOT_STARTED
-
         if AnalysisState.COMPLETED in (self, other):
             return AnalysisState.COMPLETED
 
-        return AnalysisState.SKIPPED
+        if AnalysisState.SKIPPED in (self, other):
+            return AnalysisState.SKIPPED
+
+        return AnalysisState.NOT_STARTED
 
 
 @dataclass
@@ -64,7 +64,7 @@ class DdcheckMetadata:
     load_avg_1min: dict[str, list[float]]
     load_avg_5min: dict[str, list[float]]
     load_avg_15min: dict[str, list[float]]
-    # Tracks state per node and source
+    # Tracks State per node and source
     analysis_state: dict[str, dict[Source, AnalysisState]]
     total_memory_kb: dict[str, int]
     total_cpus: dict[str, int]
@@ -146,7 +146,7 @@ class DdcheckMetadata:
         return functools.reduce(
             lambda state1, state2: state1.reduce_with(state2),
             all_states,
-            AnalysisState.SKIPPED,
+            AnalysisState.NOT_STARTED,
         )
 
 
