@@ -63,6 +63,7 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
             "hi": [],
             "si": [],
             "st": [],
+            "total": [],
         }
 
         with open(ttop_file) as f:
@@ -83,6 +84,7 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
         metadata.analysis_state[node][Source.TOP] = AnalysisState.FAILED
 
     check_cpu_wa(metadata, node)
+    check_cpu_usage(metadata, node)
 
     return metadata.analysis_state[node][Source.TOP]
 
@@ -122,6 +124,32 @@ def check_cpu_wa(metadata: DdcheckMetadata, node: str) -> None:
         )
 
 
+def check_cpu_usage(metadata: DdcheckMetadata, node: str) -> None:
+    # Record a CHECK insight for checking the average CPU time spent waiting for I/O.
+    metadata.insights.add(
+        Insight(
+            node=node,
+            source=Source.TOP,
+            qualifier=InsightQualifier.CHECK,
+            message="Checking the average CPU usage",
+        )
+    )
+
+    # Compute the average CPU time that the current node spent waiting for I/O.
+    avg_cpu_usage = sum(metadata.cpu_usage[node]["total"]) / len(
+        metadata.cpu_usage[node]["total"]
+    )
+    if avg_cpu_usage > 60:
+        metadata.insights.add(
+            Insight(
+                node=node,
+                source=Source.TOP,
+                qualifier=InsightQualifier.BAD,
+                message=f"High average CPU usage: {avg_cpu_usage:.0f}%",
+            )
+        )
+
+
 def _maybe_parse_cpu_line(cpu_data: Dict[str, List[float]], line: str) -> bool:
     """
     Parse a line containing CPU data and update the cpu_data dictionary.
@@ -140,6 +168,10 @@ def _maybe_parse_cpu_line(cpu_data: Dict[str, List[float]], line: str) -> bool:
     for part in cpu_parts:
         value_str, key = part.strip().split()
         cpu_data[key].append(float(value_str))
+
+    # Compute total CPU usage
+    total = 100 - cpu_data["id"][-1]
+    cpu_data["total"].append(total)
 
     return True
 
