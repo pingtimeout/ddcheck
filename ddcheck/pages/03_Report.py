@@ -23,6 +23,7 @@ else:
         with col1:
             st.title(f"Report for {metadata.original_filename}")
         with col2:
+            # The button is vertically aligned to the top of the enclosing block.  It should be aligned to the bottom of that block.  Fix it.  AI!
             if st.button("Rerun analysis"):
                 metadata.reset()
                 write_metadata_to_disk(metadata)
