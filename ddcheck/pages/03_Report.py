@@ -17,6 +17,7 @@ if metadata is None:
     st.switch_page("pages/01_Upload.py")
 else:
     st.title(f"Report for {metadata.original_filename}")
+    st.write(metadata.ddcheck_id)
 
     # Add a button to rerun the analysis
     if st.button("Rerun analysis"):

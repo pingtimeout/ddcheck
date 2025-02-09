@@ -77,27 +77,21 @@ def analyse_os_info(metadata: DdcheckMetadata, node: str) -> AnalysisState:
 
             # Parse total CPUs
             cpu_match = re.search(r"CPU\(s\):\s+(\d+)", content)
+            total_cpus = 0
             if cpu_match:
                 total_cpus = int(cpu_match.group(1))
 
             # Parse online CPUs
             online_match = re.search(r"On-line CPU\(s\) list:\s+([0-9,-]+)", content)
+            online_cpus = ""
+            total_online_cpus = 0
             if online_match:
                 online_cpus = online_match.group(1)
                 total_online_cpus = len(_parse_online_cpus(online_cpus))
 
-            # Verify CPU counts match
-            if total_cpus != total_online_cpus:
-                metadata.insights.add(
-                    Insight(
-                        node=node,
-                        source=Source.OS_INFO,
-                        qualifier=InsightQualifier.INTERESTING,
-                        message=(
-                            f"There are {total_cpus} CPUs in total but they are not all enabled, only {total_online_cpus} of them are online ({online_cpus})."
-                        ),
-                    )
-                )
+            _check_all_cpus_are_online(
+                metadata, node, online_cpus, total_cpus, total_online_cpus
+            )
 
             metadata.analysis_state[node][Source.OS_INFO] = AnalysisState.COMPLETED
 
@@ -106,3 +100,23 @@ def analyse_os_info(metadata: DdcheckMetadata, node: str) -> AnalysisState:
         metadata.analysis_state[node][Source.OS_INFO] = AnalysisState.FAILED
 
     return metadata.analysis_state[node][Source.OS_INFO]
+
+
+def _check_all_cpus_are_online(
+    metadata: DdcheckMetadata,
+    node: str,
+    online_cpus_str: str,
+    total_cpus: int,
+    total_online_cpus: int,
+) -> None:
+    if total_cpus != total_online_cpus:
+        metadata.insights.add(
+            Insight(
+                node=node,
+                source=Source.OS_INFO,
+                qualifier=InsightQualifier.INTERESTING,
+                message=(
+                    f"There are {total_cpus} CPUs in total but they are not all enabled, only {total_online_cpus} of them are online ({online_cpus_str})."
+                ),
+            )
+        )

@@ -84,15 +84,15 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
         logger.error(f"Error reading ttop file {ttop_file}: {e}")
         metadata.analysis_state[node][Source.TOP] = AnalysisState.FAILED
 
-    check_cpu_wa(metadata, node)
-    check_cpu_st(metadata, node)
-    check_cpu_usage(metadata, node)
-    check_jpdm(metadata, node)
+    _check_cpu_wa(metadata, node)
+    _check_cpu_st(metadata, node)
+    _check_cpu_usage(metadata, node)
+    _check_jpdm(metadata, node)
 
     return metadata.analysis_state[node][Source.TOP]
 
 
-def check_cpu_wa(metadata: DdcheckMetadata, node: str) -> None:
+def _check_cpu_wa(metadata: DdcheckMetadata, node: str) -> None:
     # Record a CHECK insight for checking the average CPU time spent waiting for I/O.
     metadata.insights.add(
         Insight(
@@ -135,7 +135,7 @@ def check_cpu_wa(metadata: DdcheckMetadata, node: str) -> None:
         )
 
 
-def check_cpu_usage(metadata: DdcheckMetadata, node: str) -> None:
+def _check_cpu_usage(metadata: DdcheckMetadata, node: str) -> None:
     # Record a CHECK insight for checking the average CPU time spent waiting for I/O.
     metadata.insights.add(
         Insight(
@@ -160,7 +160,7 @@ def check_cpu_usage(metadata: DdcheckMetadata, node: str) -> None:
         )
 
 
-def check_cpu_st(metadata: DdcheckMetadata, node: str) -> None:
+def _check_cpu_st(metadata: DdcheckMetadata, node: str) -> None:
     # Record a CHECK insight for checking the average CPU time spent waiting for I/O.
     metadata.insights.add(
         Insight(
@@ -185,7 +185,7 @@ def check_cpu_st(metadata: DdcheckMetadata, node: str) -> None:
         )
 
 
-def check_jpdm(metadata: DdcheckMetadata, node: str) -> None:
+def _check_jpdm(metadata: DdcheckMetadata, node: str) -> None:
     metadata.insights.add(
         Insight(
             node=node,
