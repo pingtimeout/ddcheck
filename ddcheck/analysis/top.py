@@ -88,8 +88,87 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
     _check_cpu_st(metadata, node)
     _check_cpu_usage(metadata, node)
     _check_jpdm(metadata, node)
+    _check_load_average(metadata, node)
 
     return metadata.analysis_state[node][Source.TOP]
+
+
+def _maybe_parse_cpu_line(cpu_data: Dict[str, List[float]], line: str) -> bool:
+    """
+    Parse a line containing CPU data and update the cpu_data dictionary.
+
+    :param cpu_data: Dictionary to update with CPU measurements
+    :param line: Line to parse
+    :return: True if the line was parsed as CPU data, False otherwise
+    """
+    if not line.startswith("%Cpu(s):"):
+        return False
+
+    # Remove "%Cpu(s):" prefix and split by comma
+    cpu_parts = line.replace("%Cpu(s):", "").strip().split(",")
+
+    # Process each CPU measurement
+    for part in cpu_parts:
+        value_str, key = part.strip().split()
+        cpu_data[key].append(float(value_str))
+
+    # Compute total CPU usage
+    total = 100 - cpu_data["id"][-1]
+    cpu_data["total"].append(total)
+
+    # Compute ratio between CPU sy and CPU us
+    jpdm = cpu_data["sy"][-1] / cpu_data["us"][-1] * 100
+    cpu_data["jpdm"].append(jpdm)
+
+    return True
+
+
+def _maybe_parse_time_and_load_average_line(
+    time_data: list[datetime],
+    load_1min: list[float],
+    load_5min: list[float],
+    load_15min: list[float],
+    line: str,
+) -> bool:
+    """
+    Parse a line containing time and load average data and update the respective lists.
+
+    :param time_data: List to append datetime values to
+    :param load_1min: List to append 1-minute load averages to
+    :param load_5min: List to append 5-minute load averages to
+    :param load_15min: List to append 15-minute load averages to
+    :param line: Line to parse
+    :return: True if the line was parsed as time/load data, False otherwise
+    """
+    if not line.startswith("top - "):
+        return False
+
+    # Extract time and load average parts
+    parts = line.split(",  load average: ")
+    if len(parts) != 2:
+        return False
+
+    # Extract and parse time
+    time_str = parts[0].split()[2]  # "top - 15:06:43" -> "15:06:43"
+    try:
+        time_obj = datetime.strptime(time_str, "%H:%M:%S")
+        time_data.append(time_obj)
+    except ValueError:
+        return False
+
+    # Extract load averages
+    load_strs = parts[1].strip().split(", ")
+    if len(load_strs) != 3:
+        return False
+
+    try:
+        load_1min.append(float(load_strs[0]))
+        load_5min.append(float(load_strs[1]))
+        load_15min.append(float(load_strs[2]))
+    except ValueError:
+        return False
+
+    return True
 
 
 def _check_cpu_wa(metadata: DdcheckMetadata, node: str) -> None:
@@ -231,79 +310,5 @@ def _check_jpdm(metadata: DdcheckMetadata, node: str) -> None:
         )
 
 
-def _maybe_parse_cpu_line(cpu_data: Dict[str, List[float]], line: str) -> bool:
-    """
-    Parse a line containing CPU data and update the cpu_data dictionary.
-
-    :param cpu_data: Dictionary to update with CPU measurements
-    :param line: Line to parse
-    :return: True if the line was parsed as CPU data, False otherwise
-    """
-    if not line.startswith("%Cpu(s):"):
-        return False
-
-    # Remove "%Cpu(s):" prefix and split by comma
-    cpu_parts = line.replace("%Cpu(s):", "").strip().split(",")
-
-    # Process each CPU measurement
-    for part in cpu_parts:
-        value_str, key = part.strip().split()
-        cpu_data[key].append(float(value_str))
-
-    # Compute total CPU usage
-    total = 100 - cpu_data["id"][-1]
-    cpu_data["total"].append(total)
-
-    # Compute ratio between CPU sy and CPU us
-    jpdm = cpu_data["sy"][-1] / cpu_data["us"][-1] * 100
-    cpu_data["jpdm"].append(jpdm)
-
-    return True
-
-
-def _maybe_parse_time_and_load_average_line(
-    time_data: list[datetime],
-    load_1min: list[float],
-    load_5min: list[float],
-    load_15min: list[float],
-    line: str,
-) -> bool:
-    """
-    Parse a line containing time and load average data and update the respective lists.
-
-    :param time_data: List to append datetime values to
-    :param load_1min: List to append 1-minute load averages to
-    :param load_5min: List to append 5-minute load averages to
-    :param load_15min: List to append 15-minute load averages to
-    :param line: Line to parse
-    :return: True if the line was parsed as time/load data, False otherwise
-    """
-    if not line.startswith("top - "):
-        return False
-
-    # Extract time and load average parts
-    parts = line.split(",  load average: ")
-    if len(parts) != 2:
-        return False
-
-    # Extract and parse time
-    time_str = parts[0].split()[2]  # "top - 15:06:43" -> "15:06:43"
-    try:
-        time_obj = datetime.strptime(time_str, "%H:%M:%S")
-        time_data.append(time_obj)
-    except ValueError:
-        return False
-
-    # Extract load averages
-    load_strs = parts[1].strip().split(", ")
-    if len(load_strs) != 3:
-        return False
-
-    try:
-        load_1min.append(float(load_strs[0]))
-        load_5min.append(float(load_strs[1]))
-        load_15min.append(float(load_strs[2]))
-    except ValueError:
-        return False
-
-    return True
+def _check_load_average(metadata: DdcheckMetadata, node: str) -> None:
+    pass
