@@ -6,8 +6,8 @@ from typing import Any
 
 
 class Source(Enum):
-    TOP = auto()
     OS_INFO = auto()
+    TOP = auto()
 
     def to_str(self) -> str:
         return self.name.lower()
@@ -15,6 +15,11 @@ class Source(Enum):
     @classmethod
     def from_str(cls, source: str) -> "Source":
         return Source[source.upper()]
+
+    def __lt__(self, other: Any) -> Any:
+        if self.__class__ is other.__class__:
+            return self.value < other.value
+        return NotImplemented
 
 
 class AnalysisState(Enum):

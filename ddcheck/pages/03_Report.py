@@ -1,7 +1,9 @@
+import json
+
 import pandas as pd
+import requests
 import streamlit as st
 from natsort import natsorted
-import requests
 
 from ddcheck.storage import DdcheckMetadata, InsightQualifier
 from ddcheck.storage.list import get_uploaded_metadata
@@ -27,6 +29,7 @@ else:
         st.switch_page("pages/02_Analysis.py")
 
     insights_per_qualifier_and_node = metadata.insights_per_qualifier_and_node()
+    insights_per_node_and_qualifier = metadata.insights_per_node_and_qualifier()
 
     # Display all the checks that were performed
     total_checks = sum(
@@ -101,15 +104,44 @@ else:
             )
 
         st.subheader("Interactive Chat with Ollama")
-        system_prompt = "You are a helpful assistant."
-        user_message = st.text_input("You:", value="Hello, how can you help me with my analysis?")
+        system_prompt = (
+            "You are a knowledgeable Software Engineer focusing on solving performance issues.  \n\n"
+            "You are provided with a list of facts that were observed on a given server.  "
+            "Your role is to help the user make sense out of these facts.  "
+            "You may recommend the user to run additional Linux CLI tools to further refine your analysis.  "
+            "Ensure that you only rely on standard Linux tools.\n\n"
+            ""
+            "The server you are analysing is running Dremio, a data lakehouse platform.  Dremio is written in Java but also contains native code run with JNI.\n\n"
+            ""
+            "The dominating consumer of the CPU is a proxy metric to quickly get an idea of where the biggest bottleneck in the system is.  "
+            "It comes from the JPDM methodology.\n "
+            "* When it is `System`, it means that the server is spending too much time running kernel code.  This typically points to too many context switches (too many threads running), or too many small disk I/O operations, or too many network I/O operations.\n"
+            "* When it is `User`, it means that most of the CPU time is spent in user space.  This typically points to either a too high GC overhead or an algorithmic issue in the Java code itself.\n"
+            "* When it is `None`, it means that something is preventing all CPUs from being fully utilized.  This typically points to too small thread pools, or a node that is not receiving enough workload."
+        )
+        initial_user_prompt = (
+            f"Analyse the following facts for the node {selected_node}.  \n\n"
+        )
+        for q in [
+            InsightQualifier.OK,
+            InsightQualifier.INTERESTING,
+            InsightQualifier.BAD,
+        ]:
+            initial_user_prompt += "".join(
+                f"* {i.message}\n"
+                for i in insights_per_qualifier_and_node.get(q, {}).get(
+                    selected_node, []
+                )
+            )
+
+        user_message = st.text_area("You:", value=initial_user_prompt)
         chat_history = st.empty()
 
         if st.button("Send"):
             response = requests.post(
-                "http://localhost:11434/api/v1/generate",
+                "http://localhost:11434/v1/chat/completions",
                 json={
-                    "model": "deepseek-r1:8b",
+                    "model": "deepseek-r1:32b",
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_message},
@@ -121,14 +153,16 @@ else:
 
             if response.status_code == 200:
                 chat_history.markdown(f"**You:** {user_message}")
-                chat_history.markdown("**Assistant:** ", unsafe_allow_html=True)
+                chat_history.markdown("**Assistant:** ")
                 assistant_response = ""
-                for chunk in response.iter_content(chunk_size=None):
+                for chunk in response.iter_lines():
                     if chunk:
-                        chunk = chunk.decode("utf-8")
-                        if "content" in chunk:
-                            content = chunk.split('"content": "')[1].split('"')[0]
-                            assistant_response += content
-                            chat_history.markdown(f"**Assistant:** {assistant_response}", unsafe_allow_html=True)
+                        chunk = chunk.decode('utf-8')
+                        if 'data: ' in chunk:
+                            data = chunk.split('data: ')[1]
+                            if data != '[DONE]':
+                                response_data = json.loads(data)
+                                assistant_response += response_data['choices'][0]['delta']['content']
+                                chat_history.markdown(f"**Assistant:** {assistant_response}")
             else:
                 chat_history.markdown("Failed to get response from Ollama server.")
