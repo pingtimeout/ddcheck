@@ -69,12 +69,13 @@ def analyse_os_info(metadata: DdcheckMetadata, node: str) -> AnalysisState:
             # Parse total memory
             mem_match = re.search(r"MemTotal:\s+(\d+)\s*kB", content)
             if mem_match:
-                metadata.total_memory_kb[node] = int(mem_match.group(1))
+                _record_ram(metadata, node, int(mem_match.group(1)))
 
             # Parse total CPUs
             cpu_match = re.search(r"CPU\(s\):\s+(\d+)", content)
             if cpu_match:
-                metadata.total_cpu_count[node] = int(cpu_match.group(1))
+                total_cpu_count = int(cpu_match.group(1))
+                _record_total_cpu_count(metadata, node, total_cpu_count)
 
             # Parse online CPUs
             online_match = re.search(r"On-line CPU\(s\) list:\s+([0-9,-]+)", content)
@@ -95,6 +96,32 @@ def analyse_os_info(metadata: DdcheckMetadata, node: str) -> AnalysisState:
         metadata.analysis_state[node][Source.OS_INFO] = AnalysisState.FAILED
 
     return metadata.analysis_state[node][Source.OS_INFO]
+
+
+def _record_ram(metadata: DdcheckMetadata, node: str, total_memory_kb: int) -> None:
+    metadata.total_memory_kb[node] = total_memory_kb
+    metadata.insights.add(
+        Insight(
+            node=node,
+            source=Source.OS_INFO,
+            qualifier=InsightQualifier.OK,
+            message=(f"The server has {total_memory_kb / 1024 / 1024:.1f} GiB RAM."),
+        )
+    )
+
+
+def _record_total_cpu_count(
+    metadata: DdcheckMetadata, node: str, total_cpu_count: int
+) -> None:
+    metadata.total_cpu_count[node] = total_cpu_count
+    metadata.insights.add(
+        Insight(
+            node=node,
+            source=Source.OS_INFO,
+            qualifier=InsightQualifier.OK,
+            message=(f"The server has {total_cpu_count} CPU cores."),
+        )
+    )
 
 
 def _check_all_cpus_are_online(
