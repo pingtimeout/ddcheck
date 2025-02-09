@@ -140,7 +140,7 @@ class DdcheckMetadata:
     load_avg_15min: dict[str, list[float]]
     # Tracks State per node and source
     total_memory_kb: dict[str, int]
-    total_used_swap_mb: dict[str, int]
+    total_used_swap_mb: dict[str, list[float]]
     total_cpu_count: dict[str, int]
 
     def __init__(

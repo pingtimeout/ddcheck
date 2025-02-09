@@ -1,4 +1,5 @@
 import logging
+import re
 from datetime import datetime
 from glob import glob
 from pathlib import Path
@@ -66,13 +67,15 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
             "total": [],
             "jpdm": [],
         }
+        swap_usage: List[float] = []
 
         with open(ttop_file) as f:
             for line in f:
-                if not _maybe_parse_time_and_load_average_line(
+                _maybe_parse_time_and_load_average_line(
                     time_data, load_1min, load_5min, load_15min, line
-                ):
-                    _maybe_parse_cpu_line(cpu_data, line)
+                )
+                _maybe_parse_cpu_line(cpu_data, line)
+                _maybe_parse_swap_line(swap_usage, line)
 
             metadata.cpu_usage[node] = cpu_data
             metadata.top_times[node] = time_data
@@ -80,6 +83,7 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
             metadata.load_avg_5min[node] = load_5min
             metadata.load_avg_15min[node] = load_15min
             metadata.analysis_state[node][Source.TOP] = AnalysisState.COMPLETED
+            metadata.total_used_swap_mb[node] = swap_usage
     except Exception as e:
         logger.exception(e)
         logger.error(f"Error reading ttop file {ttop_file}: {e}")
@@ -90,6 +94,7 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
     _check_cpu_usage(metadata, node)
     _check_jpdm(metadata, node)
     _check_load_average(metadata, node)
+    _check_swap_usage(metadata, node)
 
     return metadata.analysis_state[node][Source.TOP]
 
@@ -179,31 +184,17 @@ def _maybe_parse_time_and_load_average_line(
     return True
 
 
-def _maybe_parse_swap_line(metadata: DdcheckMetadata, node: str, line: str) -> bool:
-    """
-    Parse a line containing swap data and update the metadata.
-
-    :param metadata: DdcheckMetadata object to update
-    :param node: Node name
-    :param line: Line to parse
-    :return: True if the line was parsed as swap data, False otherwise
-    """
+def _maybe_parse_swap_line(swap_usage: list[float], line: str) -> bool:
     if not line.startswith("MiB Swap:"):
         return False
 
-    # Extract swap parts
-    parts = line.split()
-    if len(parts) < 6:
-        return False
-
     # Extract and parse total used swap
-    try:
-        total_used_swap_mb = float(parts[4].strip(","))
-        metadata.total_used_swap_mb[node] = total_used_swap_mb
-    except ValueError:
+    swap_match = re.search(r"MiB Swap:.*\s+([0-9\.]+)\s*used.*", line)
+    if swap_match:
+        swap_usage.append(float(swap_match.group(1)))
+        return True
+    else:
         return False
-
-    return True
 
 
 def _check_cpu_wa(metadata: DdcheckMetadata, node: str) -> None:
@@ -370,5 +361,39 @@ def _check_load_average(metadata: DdcheckMetadata, node: str) -> None:
                 source=Source.TOP,
                 qualifier=InsightQualifier.INTERESTING,
                 message=f"Both 1-min load average ({avg_1m_load_average:.1f}) and 15-min load average ({avg_15m_load_average:.1f}) are higher than total CPU count ({total_cpu_count})",
+            )
+        )
+
+
+def _check_swap_usage(metadata: DdcheckMetadata, node: str) -> None:
+    metadata.insights.add(
+        Insight(
+            node=node,
+            source=Source.TOP,
+            qualifier=InsightQualifier.CHECK,
+            message="Checking the Swap usage",
+        )
+    )
+
+    avg_swap_usage = sum(metadata.total_used_swap_mb[node]) / len(
+        metadata.total_used_swap_mb[node]
+    )
+
+    if avg_swap_usage > 0:
+        metadata.insights.add(
+            Insight(
+                node=node,
+                source=Source.TOP,
+                qualifier=InsightQualifier.BAD,
+                message=f"Swap usage detected. Average swap usage is greater than zero ({avg_swap_usage:.1f})",
+            )
+        )
+    else:
+        metadata.insights.add(
+            Insight(
+                node=node,
+                source=Source.TOP,
+                qualifier=InsightQualifier.OK,
+                message="No swap usage detected",
             )
         )
