@@ -81,6 +81,7 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
             metadata.load_avg_15min[node] = load_15min
             metadata.analysis_state[node][Source.TOP] = AnalysisState.COMPLETED
     except Exception as e:
+        logger.exception(e)
         logger.error(f"Error reading ttop file {ttop_file}: {e}")
         metadata.analysis_state[node][Source.TOP] = AnalysisState.FAILED
 
