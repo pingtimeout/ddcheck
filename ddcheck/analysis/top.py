@@ -98,6 +98,8 @@ def check_cpu_wa(metadata: DdcheckMetadata, node: str) -> None:
         )
     )
 
+    # Compute the average CPU time that the current node spent waiting for I/O. AI!
+
 
 def _maybe_parse_cpu_line(cpu_data: Dict[str, List[float]], line: str) -> bool:
     """
