@@ -98,7 +98,28 @@ def check_cpu_wa(metadata: DdcheckMetadata, node: str) -> None:
         )
     )
 
-    # Compute the average CPU time that the current node spent waiting for I/O. AI!
+    # Compute the average CPU time that the current node spent waiting for I/O.
+    avg_cpu_wa = sum(metadata.cpu_usage[node]["wa"]) / len(
+        metadata.cpu_usage[node]["wa"]
+    )
+    if avg_cpu_wa > 6:
+        metadata.insights.add(
+            Insight(
+                node=node,
+                source=Source.TOP,
+                qualifier=InsightQualifier.BAD,
+                message=f"High average CPU time spent waiting for I/O: {avg_cpu_wa}%",
+            )
+        )
+    elif avg_cpu_wa > 1:
+        metadata.insights.add(
+            Insight(
+                node=node,
+                source=Source.TOP,
+                qualifier=InsightQualifier.INTERESTING,
+                message=f"Non-zero average CPU time spent waiting for I/O: {avg_cpu_wa}%",
+            )
+        )
 
 
 def _maybe_parse_cpu_line(cpu_data: Dict[str, List[float]], line: str) -> bool:
