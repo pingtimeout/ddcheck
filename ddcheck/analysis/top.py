@@ -179,6 +179,33 @@ def _maybe_parse_time_and_load_average_line(
     return True
 
 
+def _maybe_parse_swap_line(metadata: DdcheckMetadata, node: str, line: str) -> bool:
+    """
+    Parse a line containing swap data and update the metadata.
+
+    :param metadata: DdcheckMetadata object to update
+    :param node: Node name
+    :param line: Line to parse
+    :return: True if the line was parsed as swap data, False otherwise
+    """
+    if not line.startswith("MiB Swap:"):
+        return False
+
+    # Extract swap parts
+    parts = line.split()
+    if len(parts) < 6:
+        return False
+
+    # Extract and parse total used swap
+    try:
+        total_used_swap_mb = float(parts[4].strip(","))
+        metadata.total_used_swap_mb[node] = total_used_swap_mb
+    except ValueError:
+        return False
+
+    return True
+
+
 def _check_cpu_wa(metadata: DdcheckMetadata, node: str) -> None:
     # Record a CHECK insight for checking the average CPU time spent waiting for I/O.
     metadata.insights.add(
