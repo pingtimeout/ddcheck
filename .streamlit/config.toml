@@ -2,5 +2,6 @@
 primaryColor = "#43b8c9"
 
 [server]
+address = "0.0.0.0"
 runOnSave = true
 maxUploadSize = 2000
