@@ -114,9 +114,9 @@ else:
             ""
             "The server you are analysing is running Dremio, a data lakehouse platform.  Dremio is written in Java but also contains native code run with JNI.\n\n"
             ""
-            "The dominating consumer of the CPU is a proxy metric to quickly get an idea of where the biggest bottleneck in the system is.  "
+            "The DCOTC is a proxy metric to quickly get an idea of where the biggest bottleneck in the system is.  "
             "It comes from the JPDM methodology.\n "
-            "* When it is `System`, it means that the server is spending too much time running kernel code.  The associated root cause issue usually is too many context switches (too many threads running), or too many small disk I/O operations, or too many network I/O operations.\n"
+            "* When it is `System`, it means that the server is spending an abnormal amount of CPU time in kernel space, compared to the time spent in userspace.  The associated root cause issue usually is too many context switches (too many threads running), or too many small disk I/O operations, or too many network I/O operations.\n"
             "* When it is `User`, it means that most of the CPU time is spent in user space.  The associated root cause issue usually is a too high GC overhead or an algorithmic issue in the Java code itself.\n"
             "* When it is `None`, it means that something is preventing all CPUs from being fully utilized.  The associated root cause issue usually is too small thread pools, or a node that is not receiving enough workload."
         )
@@ -142,7 +142,7 @@ else:
             response = requests.post(
                 "http://localhost:11434/v1/chat/completions",
                 json={
-                    "model": "deepseek-r1:8b",
+                    "model": "deepseek-r1:32b",
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_message},

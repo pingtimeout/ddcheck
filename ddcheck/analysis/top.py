@@ -254,13 +254,28 @@ def _check_cpu_usage(metadata: DdcheckMetadata, node: str) -> None:
     avg_cpu_usage = sum(metadata.cpu_usage[node]["total"]) / len(
         metadata.cpu_usage[node]["total"]
     )
-    if avg_cpu_usage > 60:
+    avg_cpu_us = sum(metadata.cpu_usage[node]["us"]) / len(
+        metadata.cpu_usage[node]["us"]
+    )
+    avg_cpu_sy = sum(metadata.cpu_usage[node]["sy"]) / len(
+        metadata.cpu_usage[node]["sy"]
+    )
+    if avg_cpu_usage > 80:
         metadata.insights.add(
             Insight(
                 node=node,
                 source=Source.TOP,
                 qualifier=InsightQualifier.BAD,
-                message=f"High average CPU usage: {avg_cpu_usage:.0f}%",
+                message=f"High average CPU usage: {avg_cpu_usage:.0f}%.  Average CPU time spent in user space: {avg_cpu_us:.0f}%.  Average CPU time spent in kernel space: {avg_cpu_sy:.0f}%",
+            )
+        )
+    if avg_cpu_usage < 20:
+        metadata.insights.add(
+            Insight(
+                node=node,
+                source=Source.TOP,
+                qualifier=InsightQualifier.OK,
+                message=f"Low average CPU usage: {avg_cpu_usage:.0f}%",
             )
         )
 
@@ -319,7 +334,7 @@ def _check_jpdm(metadata: DdcheckMetadata, node: str) -> None:
             node=node,
             source=Source.TOP,
             qualifier=InsightQualifier.INTERESTING,
-            message=f"Dominating consumer of the CPU: {dominating_consumer}",
+            message=f"The DCOTC is `{dominating_consumer}`",
         )
     )
     metadata.insights.add(
@@ -327,7 +342,7 @@ def _check_jpdm(metadata: DdcheckMetadata, node: str) -> None:
             node=node,
             source=Source.TOP,
             qualifier=InsightQualifier.DEBUG,
-            message=f"Dominating consumer of the CPU: None. JPDM ratio={avg_jpdm:.1f}% and average CPU usage={avg_cpu_usage:.0f}%",
+            message=f"Dominating consumer of the CPU: {dominating_consumer}. JPDM ratio={avg_jpdm:.1f}% and average CPU usage={avg_cpu_usage:.0f}%",
         )
     )
 
