@@ -5,7 +5,8 @@ import tarfile
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from tarfile import TarInfo
+from typing import Generator, Optional
 
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
@@ -41,14 +42,19 @@ def save_uploaded_tarball(uploaded_file: UploadedFile) -> Optional[DdcheckMetada
     try:
         logger.debug("Extracting tarball contents")
         with tarfile.open(fileobj=uploaded_file) as tar:
-            def filter_members(members):
+
+            def only_useful_files(
+                members: list[TarInfo],
+            ) -> Generator[TarInfo, None, None]:
                 for member in members:
-                    if any(part in member.name for part in ['jfr', 'logs', 'queries']):
+                    if any(part in member.name for part in ["jfr", "logs", "queries"]):
                         logger.debug(f"Skipping directory: {member.name}")
                         continue
                     yield member
 
-            tar.extractall(path=extract_path, members=filter_members(tar.getmembers()))
+            tar.extractall(
+                path=extract_path, members=only_useful_files(tar.getmembers())
+            )
     except tarfile.ReadError:
         # The tarball could not be read, mark it as invalid
         logger.error("Failed to read tarball - file might be corrupted")
