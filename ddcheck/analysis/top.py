@@ -118,7 +118,14 @@ def _maybe_parse_cpu_line(cpu_data: Dict[str, List[float]], line: str) -> bool:
     cpu_data["total"].append(total)
 
     # Compute ratio between CPU sy and CPU us
-    jpdm = cpu_data["sy"][-1] / cpu_data["us"][-1] * 100
+    cpu_sy = cpu_data["sy"][-1]
+    cpu_us = cpu_data["us"][-1]
+    if cpu_us == 0 and cpu_sy == 0:
+        jpdm = 0.0
+    else:
+        if cpu_us == 0:
+            cpu_us = cpu_sy * 10
+        jpdm = cpu_sy / cpu_us * 100
     cpu_data["jpdm"].append(jpdm)
 
     return True
@@ -288,7 +295,7 @@ def _check_jpdm(metadata: DdcheckMetadata, node: str) -> None:
                 node=node,
                 source=Source.TOP,
                 qualifier=InsightQualifier.INTERESTING,
-                message=f"JPDM ratio suggests node is system-dominated: {avg_jpdm:.1f}%",
+                message=f"Dominating consumer of the CPU: System. JPDM ratio={avg_jpdm:.1f}%",
             )
         )
     elif avg_cpu_usage >= 90:
@@ -297,7 +304,7 @@ def _check_jpdm(metadata: DdcheckMetadata, node: str) -> None:
                 node=node,
                 source=Source.TOP,
                 qualifier=InsightQualifier.INTERESTING,
-                message=f"JPDM ratio suggests node is user-dominated: {avg_jpdm:.1f}% and {avg_cpu_usage:.0f}% average CPU usage",
+                message=f"Dominating consumer of the CPU: User. JPDM ratio={avg_jpdm:.1f}% and average CPU usage={avg_cpu_usage:.0f}%",
             )
         )
     else:
@@ -306,7 +313,7 @@ def _check_jpdm(metadata: DdcheckMetadata, node: str) -> None:
                 node=node,
                 source=Source.TOP,
                 qualifier=InsightQualifier.INTERESTING,
-                message=f"JPDM ratio suggests no dominating consumer of the CPU: {avg_jpdm:.1f}% and {avg_cpu_usage:.0f}% average CPU usage",
+                message=f"Dominating consumer of the CPU: None. JPDM ratio={avg_jpdm:.1f}% and average CPU usage={avg_cpu_usage:.0f}%",
             )
         )
 
