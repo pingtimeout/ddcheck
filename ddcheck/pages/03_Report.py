@@ -14,19 +14,19 @@ st.set_page_config(layout="wide")
 if "ddcheck_id" not in st.session_state:
     st.switch_page("pages/01_Upload.py")
 
-# Add your analysis logic here
 metadata: DdcheckMetadata | None = get_uploaded_metadata(st.session_state.ddcheck_id)
 if metadata is None:
     st.switch_page("pages/01_Upload.py")
 else:
-    # The `Report for...` and `Rerun analysis` button are currently placed one after the other.  Update the code so that the `Rerun analysis` button is placed on the same line than the title, at the far right of the screen.  AI!
-    st.title(f"Report for {metadata.original_filename}")
-
-    # Add a button to rerun the analysis
-    if st.button("Rerun analysis"):
-        metadata.reset()
-        write_metadata_to_disk(metadata)
-        st.switch_page("pages/02_Analysis.py")
+    with st.container():
+        col1, col2 = st.columns([10, 2])
+        with col1:
+            st.title(f"Report for {metadata.original_filename}")
+        with col2:
+            if st.button("Rerun analysis"):
+                metadata.reset()
+                write_metadata_to_disk(metadata)
+                st.switch_page("pages/02_Analysis.py")
 
     insights_per_qualifier_and_node = metadata.insights_per_qualifier_and_node()
     insights_per_node_and_qualifier = metadata.insights_per_node_and_qualifier()
