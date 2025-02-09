@@ -25,14 +25,9 @@ else:
         write_metadata_to_disk(metadata)
         st.switch_page("pages/02_Analysis.py")
 
-    st.subheader("Insights")
     insights_per_qualifier_and_node = metadata.insights_per_qualifier_and_node()
-    labels_per_qualifier = {
-        InsightQualifier.BAD: ("🔴"),
-        InsightQualifier.INTERESTING: ("🟡"),
-        InsightQualifier.OK: ("🟢"),
-    }
 
+    # Display all the checks that were performed
     total_checks = sum(
         len(insights)
         for insights in insights_per_qualifier_and_node[InsightQualifier.CHECK].values()
@@ -47,31 +42,31 @@ else:
             for insight in node_and_insights[1]:
                 status.write(f"{node_and_insights[0]}: {insight.message}")
 
-    total_insights = 0
-    for qualifier in labels_per_qualifier:
-        insights_per_node = insights_per_qualifier_and_node.get(qualifier, {})
-        # Count the insights across all nodes
-        total_qualified_insights = sum(
-            len(insights) for insights in insights_per_node.values()
-        )
-        total_insights += total_qualified_insights
-        if total_qualified_insights != 0:
-            st.write(f"{labels_per_qualifier[qualifier]} **{qualifier.name}**")
-            nodes = insights_per_node.items()
-            for node, insights in natsorted(nodes):
-                for insight in insights:
-                    st.write(f"* {node}: {insight.message}")
-
-    if total_insights == 0:
-        st.write("No insights found")
-
-    st.subheader("Per-node metrics")
-
     # Show a selector with all the nodes
     selected_node = st.selectbox("Select a node", metadata.nodes)
 
+    # Display the insights for the selected node
     if selected_node:
-        st.subheader("CPU usage")
+        st.write("### Node-specific insights")
+        labels_per_qualifier = {
+            InsightQualifier.BAD: ("🔴"),
+            InsightQualifier.INTERESTING: ("🟡"),
+            InsightQualifier.OK: ("🟢"),
+        }
+
+        for qualifier in labels_per_qualifier:
+            insights = insights_per_qualifier_and_node.get(qualifier, {}).get(
+                selected_node, []
+            )
+            if len(insights) != 0:
+                st.write(f"{labels_per_qualifier[qualifier]} **{qualifier.name}**")
+                for insight in insights:
+                    st.write(f"* {selected_node}: {insight.message}")
+            else:
+                st.write(f"* {selected_node}: No insight")
+
+        st.subheader("Node-specific metrics")
+        st.write("#### CPU usage")
 
         if selected_node in metadata.cpu_usage:
             df = pd.DataFrame(metadata.cpu_usage[selected_node])
