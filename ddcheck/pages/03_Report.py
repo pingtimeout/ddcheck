@@ -32,8 +32,12 @@ else:
         InsightQualifier.OK: ("🟢"),
     }
 
+    total_checks = sum(
+        len(insights)
+        for insights in insights_per_qualifier_and_node[InsightQualifier.CHECK].values()
+    )
     with st.status(
-        f"📋 {len(insights_per_qualifier_and_node[InsightQualifier.CHECK])} checks performed",
+        f"📋 {total_checks} checks performed",
         expanded=False,
     ) as status:
         for node_and_insights in natsorted(
