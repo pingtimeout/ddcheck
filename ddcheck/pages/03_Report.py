@@ -19,11 +19,10 @@ if metadata is None:
     st.switch_page("pages/01_Upload.py")
 else:
     with st.container():
-        col1, col2 = st.columns([10, 2])
+        col1, col2 = st.columns([10, 2], vertical_alignment="bottom")
         with col1:
             st.title(f"Report for {metadata.original_filename}")
         with col2:
-            # The button is vertically aligned to the top of the enclosing block.  It should be aligned to the bottom of that block.  Fix it.  AI!
             if st.button("Rerun analysis"):
                 metadata.reset()
                 write_metadata_to_disk(metadata)
