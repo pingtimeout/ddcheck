@@ -64,6 +64,7 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
             "si": [],
             "st": [],
             "total": [],
+            "jpdm": [],
         }
 
         with open(ttop_file) as f:
@@ -86,6 +87,7 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
     check_cpu_wa(metadata, node)
     check_cpu_st(metadata, node)
     check_cpu_usage(metadata, node)
+    check_jpdm(metadata, node)
 
     return metadata.analysis_state[node][Source.TOP]
 
@@ -101,7 +103,6 @@ def check_cpu_wa(metadata: DdcheckMetadata, node: str) -> None:
         )
     )
 
-    # Compute the average CPU time that the current node spent waiting for I/O.
     avg_cpu_wa = sum(metadata.cpu_usage[node]["wa"]) / len(
         metadata.cpu_usage[node]["wa"]
     )
@@ -136,7 +137,6 @@ def check_cpu_usage(metadata: DdcheckMetadata, node: str) -> None:
         )
     )
 
-    # Compute the average CPU time that the current node spent waiting for I/O.
     avg_cpu_usage = sum(metadata.cpu_usage[node]["total"]) / len(
         metadata.cpu_usage[node]["total"]
     )
@@ -162,7 +162,6 @@ def check_cpu_st(metadata: DdcheckMetadata, node: str) -> None:
         )
     )
 
-    # Compute the average CPU time that the current node spent waiting for I/O.
     avg_cpu_usage = sum(metadata.cpu_usage[node]["st"]) / len(
         metadata.cpu_usage[node]["st"]
     )
@@ -173,6 +172,52 @@ def check_cpu_st(metadata: DdcheckMetadata, node: str) -> None:
                 source=Source.TOP,
                 qualifier=InsightQualifier.BAD,
                 message=f"Non-zero stolen CPU time: {avg_cpu_usage:.1f}%",
+            )
+        )
+
+
+def check_jpdm(metadata: DdcheckMetadata, node: str) -> None:
+    metadata.insights.add(
+        Insight(
+            node=node,
+            source=Source.TOP,
+            qualifier=InsightQualifier.CHECK,
+            message="Checking the JPDM ratio",
+        )
+    )
+
+    avg_jpdm = sum(metadata.cpu_usage[node]["jpdm"]) / len(
+        metadata.cpu_usage[node]["jpdm"]
+    )
+    avg_cpu_usage = sum(metadata.cpu_usage[node]["total"]) / len(
+        metadata.cpu_usage[node]["total"]
+    )
+
+    if avg_jpdm >= 10:
+        metadata.insights.add(
+            Insight(
+                node=node,
+                source=Source.TOP,
+                qualifier=InsightQualifier.INTERESTING,
+                message=f"JPDM ratio suggests node is system-dominated: {avg_jpdm:.1f}%",
+            )
+        )
+    elif avg_cpu_usage >= 90:
+        metadata.insights.add(
+            Insight(
+                node=node,
+                source=Source.TOP,
+                qualifier=InsightQualifier.INTERESTING,
+                message=f"JPDM ratio suggests node is user-dominated: {avg_jpdm:.1f}% and {avg_cpu_usage:.0f}% average CPU usage",
+            )
+        )
+    else:
+        metadata.insights.add(
+            Insight(
+                node=node,
+                source=Source.TOP,
+                qualifier=InsightQualifier.INTERESTING,
+                message=f"JPDM ratio suggests no dominating consumer of the CPU: {avg_jpdm:.1f}% and {avg_cpu_usage:.0f}% average CPU usage",
             )
         )
 
@@ -199,6 +244,10 @@ def _maybe_parse_cpu_line(cpu_data: Dict[str, List[float]], line: str) -> bool:
     # Compute total CPU usage
     total = 100 - cpu_data["id"][-1]
     cpu_data["total"].append(total)
+
+    # Compute ratio between CPU sy and CPU us
+    jpdm = cpu_data["sy"][-1] / cpu_data["us"][-1] * 100
+    cpu_data["jpdm"].append(jpdm)
 
     return True
 
