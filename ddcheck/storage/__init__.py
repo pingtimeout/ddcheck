@@ -66,7 +66,6 @@ class InsightQualifier(Enum):
     OK = auto()
     INTERESTING = auto()
     BAD = auto()
-    # AI: Note the new CHECK qualifier that denotes that a check was performed and that it can yield new insights
     CHECK = auto()
 
     def to_str(self) -> str:

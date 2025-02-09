@@ -4,7 +4,13 @@ from glob import glob
 from pathlib import Path
 from typing import Dict, List
 
-from ddcheck.storage import AnalysisState, DdcheckMetadata, Source
+from ddcheck.storage import (
+    AnalysisState,
+    DdcheckMetadata,
+    Insight,
+    InsightQualifier,
+    Source,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -76,9 +82,21 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
         logger.error(f"Error reading ttop file {ttop_file}: {e}")
         metadata.analysis_state[node][Source.TOP] = AnalysisState.FAILED
 
-    # Record a CHECK insight for checking the average CPU time spent waiting for I/O. AI!
+    check_cpu_wa(metadata, node)
 
     return metadata.analysis_state[node][Source.TOP]
+
+
+def check_cpu_wa(metadata: DdcheckMetadata, node: str) -> None:
+    # Record a CHECK insight for checking the average CPU time spent waiting for I/O.
+    metadata.insights.add(
+        Insight(
+            node=node,
+            source=Source.TOP,
+            qualifier=InsightQualifier.CHECK,
+            message="Checking the average CPU time spent waiting for I/O",
+        )
+    )
 
 
 def _maybe_parse_cpu_line(cpu_data: Dict[str, List[float]], line: str) -> bool:
