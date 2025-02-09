@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 from natsort import natsorted
+import requests
 
 from ddcheck.storage import DdcheckMetadata, InsightQualifier
 from ddcheck.storage.list import get_uploaded_metadata
@@ -98,3 +99,36 @@ else:
                 # y="Swap used",
                 use_container_width=True,
             )
+
+        st.subheader("Interactive Chat with Ollama")
+        system_prompt = "You are a helpful assistant."
+        user_message = st.text_input("You:", value="Hello, how can you help me with my analysis?")
+        chat_history = st.empty()
+
+        if st.button("Send"):
+            response = requests.post(
+                "http://localhost:11434/api/v1/generate",
+                json={
+                    "model": "deepseek-r1:8b",
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_message},
+                    ],
+                    "stream": True,
+                },
+                stream=True,
+            )
+
+            if response.status_code == 200:
+                chat_history.markdown(f"**You:** {user_message}")
+                chat_history.markdown("**Assistant:** ", unsafe_allow_html=True)
+                assistant_response = ""
+                for chunk in response.iter_content(chunk_size=None):
+                    if chunk:
+                        chunk = chunk.decode("utf-8")
+                        if "content" in chunk:
+                            content = chunk.split('"content": "')[1].split('"')[0]
+                            assistant_response += content
+                            chat_history.markdown(f"**Assistant:** {assistant_response}", unsafe_allow_html=True)
+            else:
+                chat_history.markdown("Failed to get response from Ollama server.")
