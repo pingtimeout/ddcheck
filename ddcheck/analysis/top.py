@@ -76,6 +76,15 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
         logger.error(f"Error reading ttop file {ttop_file}: {e}")
         metadata.analysis_state[node][Source.TOP] = AnalysisState.FAILED
 
+    # AI: Record a CHECK insights for the average CPU time spent waiting for I/O
+
+    # AI: Compute the average CPU time that the current node spent waiting for I/O
+
+    # AI: If that average is above 1, record an INTERESTING fact suggesting moderate disk activity
+
+    # AI: If that average is above 5, record a BAD fact suggesting high disk activity
+
+    # AI!
     return metadata.analysis_state[node][Source.TOP]
 
 
