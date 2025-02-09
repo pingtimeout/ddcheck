@@ -112,7 +112,7 @@ def check_cpu_wa(metadata: DdcheckMetadata, node: str) -> None:
                 node=node,
                 source=Source.TOP,
                 qualifier=InsightQualifier.BAD,
-                message=f"High average CPU time spent waiting for I/O: {avg_cpu_wa:.1f}%",
+                message=f"High average CPU time spent waiting for disk I/O: {avg_cpu_wa:.1f}%",
             )
         )
     elif avg_cpu_wa >= 1:
@@ -121,7 +121,16 @@ def check_cpu_wa(metadata: DdcheckMetadata, node: str) -> None:
                 node=node,
                 source=Source.TOP,
                 qualifier=InsightQualifier.INTERESTING,
-                message=f"Non-zero average CPU time spent waiting for I/O: {avg_cpu_wa:.1f}%",
+                message=f"Non-zero average CPU time spent waiting for disk I/O: {avg_cpu_wa:.1f}%",
+            )
+        )
+    else:
+        metadata.insights.add(
+            Insight(
+                node=node,
+                source=Source.TOP,
+                qualifier=InsightQualifier.OK,
+                message="No time spent waiting for disk I/O, suggesting no disk saturation",
             )
         )
 
