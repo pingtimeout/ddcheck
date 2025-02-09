@@ -84,6 +84,7 @@ def analyse_top_output(metadata: DdcheckMetadata, node: str) -> AnalysisState:
         metadata.analysis_state[node][Source.TOP] = AnalysisState.FAILED
 
     check_cpu_wa(metadata, node)
+    check_cpu_st(metadata, node)
     check_cpu_usage(metadata, node)
 
     return metadata.analysis_state[node][Source.TOP]
@@ -104,7 +105,7 @@ def check_cpu_wa(metadata: DdcheckMetadata, node: str) -> None:
     avg_cpu_wa = sum(metadata.cpu_usage[node]["wa"]) / len(
         metadata.cpu_usage[node]["wa"]
     )
-    if avg_cpu_wa > 6:
+    if avg_cpu_wa >= 6:
         metadata.insights.add(
             Insight(
                 node=node,
@@ -113,7 +114,7 @@ def check_cpu_wa(metadata: DdcheckMetadata, node: str) -> None:
                 message=f"High average CPU time spent waiting for I/O: {avg_cpu_wa:.1f}%",
             )
         )
-    elif avg_cpu_wa > 1:
+    elif avg_cpu_wa >= 1:
         metadata.insights.add(
             Insight(
                 node=node,
@@ -146,6 +147,32 @@ def check_cpu_usage(metadata: DdcheckMetadata, node: str) -> None:
                 source=Source.TOP,
                 qualifier=InsightQualifier.BAD,
                 message=f"High average CPU usage: {avg_cpu_usage:.0f}%",
+            )
+        )
+
+
+def check_cpu_st(metadata: DdcheckMetadata, node: str) -> None:
+    # Record a CHECK insight for checking the average CPU time spent waiting for I/O.
+    metadata.insights.add(
+        Insight(
+            node=node,
+            source=Source.TOP,
+            qualifier=InsightQualifier.CHECK,
+            message="Checking the average stolen CPU time",
+        )
+    )
+
+    # Compute the average CPU time that the current node spent waiting for I/O.
+    avg_cpu_usage = sum(metadata.cpu_usage[node]["st"]) / len(
+        metadata.cpu_usage[node]["st"]
+    )
+    if avg_cpu_usage >= 1:
+        metadata.insights.add(
+            Insight(
+                node=node,
+                source=Source.TOP,
+                qualifier=InsightQualifier.BAD,
+                message=f"Non-zero stolen CPU time: {avg_cpu_usage:.1f}%",
             )
         )
 
