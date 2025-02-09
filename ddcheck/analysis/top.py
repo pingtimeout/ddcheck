@@ -296,7 +296,7 @@ def _check_jpdm(metadata: DdcheckMetadata, node: str) -> None:
             node=node,
             source=Source.TOP,
             qualifier=InsightQualifier.CHECK,
-            message="Checking the JPDM ratio",
+            message="JPDM ratio",
         )
     )
 
@@ -308,32 +308,28 @@ def _check_jpdm(metadata: DdcheckMetadata, node: str) -> None:
     )
 
     if avg_jpdm >= 10:
-        metadata.insights.add(
-            Insight(
-                node=node,
-                source=Source.TOP,
-                qualifier=InsightQualifier.INTERESTING,
-                message=f"Dominating consumer of the CPU: System. JPDM ratio={avg_jpdm:.1f}%",
-            )
-        )
+        dominating_consumer = "System"
     elif avg_cpu_usage >= 90:
-        metadata.insights.add(
-            Insight(
-                node=node,
-                source=Source.TOP,
-                qualifier=InsightQualifier.INTERESTING,
-                message=f"Dominating consumer of the CPU: User. JPDM ratio={avg_jpdm:.1f}% and average CPU usage={avg_cpu_usage:.0f}%",
-            )
-        )
+        dominating_consumer = "User"
     else:
-        metadata.insights.add(
-            Insight(
-                node=node,
-                source=Source.TOP,
-                qualifier=InsightQualifier.INTERESTING,
-                message=f"Dominating consumer of the CPU: None. JPDM ratio={avg_jpdm:.1f}% and average CPU usage={avg_cpu_usage:.0f}%",
-            )
+        dominating_consumer = "None"
+
+    metadata.insights.add(
+        Insight(
+            node=node,
+            source=Source.TOP,
+            qualifier=InsightQualifier.INTERESTING,
+            message=f"Dominating consumer of the CPU: {dominating_consumer}",
         )
+    )
+    metadata.insights.add(
+        Insight(
+            node=node,
+            source=Source.TOP,
+            qualifier=InsightQualifier.DEBUG,
+            message=f"Dominating consumer of the CPU: None. JPDM ratio={avg_jpdm:.1f}% and average CPU usage={avg_cpu_usage:.0f}%",
+        )
+    )
 
 
 def _check_load_average(metadata: DdcheckMetadata, node: str) -> None:

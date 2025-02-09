@@ -56,6 +56,7 @@ else:
             InsightQualifier.BAD: ("🔴"),
             InsightQualifier.INTERESTING: ("🟡"),
             InsightQualifier.OK: ("🟢"),
+            InsightQualifier.DEBUG: ("🔎"),
         }
 
         for qualifier in labels_per_qualifier:
@@ -115,9 +116,9 @@ else:
             ""
             "The dominating consumer of the CPU is a proxy metric to quickly get an idea of where the biggest bottleneck in the system is.  "
             "It comes from the JPDM methodology.\n "
-            "* When it is `System`, it means that the server is spending too much time running kernel code.  This typically points to too many context switches (too many threads running), or too many small disk I/O operations, or too many network I/O operations.\n"
-            "* When it is `User`, it means that most of the CPU time is spent in user space.  This typically points to either a too high GC overhead or an algorithmic issue in the Java code itself.\n"
-            "* When it is `None`, it means that something is preventing all CPUs from being fully utilized.  This typically points to too small thread pools, or a node that is not receiving enough workload."
+            "* When it is `System`, it means that the server is spending too much time running kernel code.  The associated root cause issue usually is too many context switches (too many threads running), or too many small disk I/O operations, or too many network I/O operations.\n"
+            "* When it is `User`, it means that most of the CPU time is spent in user space.  The associated root cause issue usually is a too high GC overhead or an algorithmic issue in the Java code itself.\n"
+            "* When it is `None`, it means that something is preventing all CPUs from being fully utilized.  The associated root cause issue usually is too small thread pools, or a node that is not receiving enough workload."
         )
         initial_user_prompt = (
             f"Analyse the following facts for the node {selected_node}.  \n\n"
@@ -141,7 +142,7 @@ else:
             response = requests.post(
                 "http://localhost:11434/v1/chat/completions",
                 json={
-                    "model": "deepseek-r1:32b",
+                    "model": "deepseek-r1:8b",
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_message},

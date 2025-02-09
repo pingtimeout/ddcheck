@@ -72,6 +72,7 @@ class InsightQualifier(Enum):
     INTERESTING = auto()
     BAD = auto()
     CHECK = auto()
+    DEBUG = auto()
 
     def to_str(self) -> str:
         return self.name.lower()
