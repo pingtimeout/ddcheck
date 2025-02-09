@@ -42,15 +42,22 @@ else:
             for insight in node_and_insights[1]:
                 status.write(f"{node_and_insights[0]}: {insight.message}")
 
+    total_insights = 0
     for qualifier in labels_per_qualifier:
         insights_per_node = insights_per_qualifier_and_node.get(qualifier, {})
-        if insights_per_node:
+        # Count the insights across all nodes
+        total_qualified_insights = sum(
+            len(insights) for insights in insights_per_node.values()
+        )
+        total_insights += total_qualified_insights
+        if total_qualified_insights != 0:
             st.write(f"{labels_per_qualifier[qualifier]} **{qualifier.name}**")
-        nodes = insights_per_node.items()
-        for node, insights in natsorted(nodes):
-            for insight in insights:
-                st.write(f"* {node}: {insight.message}")
-    else:
+            nodes = insights_per_node.items()
+            for node, insights in natsorted(nodes):
+                for insight in insights:
+                    st.write(f"* {node}: {insight.message}")
+
+    if total_insights == 0:
         st.write("No insights found")
 
     st.subheader("Per-node metrics")
