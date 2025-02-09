@@ -31,6 +31,17 @@ else:
         InsightQualifier.INTERESTING: ("🟡"),
         InsightQualifier.OK: ("🟢"),
     }
+
+    with st.status(
+        f"📋 {len(insights_per_qualifier_and_node[InsightQualifier.CHECK])} checks performed",
+        expanded=False,
+    ) as status:
+        for node_and_insights in natsorted(
+            insights_per_qualifier_and_node[InsightQualifier.CHECK].items()
+        ):
+            for insight in node_and_insights[1]:
+                status.write(f"{node_and_insights[0]}: {insight.message}")
+
     for qualifier in labels_per_qualifier:
         insights_per_node = insights_per_qualifier_and_node.get(qualifier, {})
         if insights_per_node:
