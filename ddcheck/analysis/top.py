@@ -311,4 +311,29 @@ def _check_jpdm(metadata: DdcheckMetadata, node: str) -> None:
 
 
 def _check_load_average(metadata: DdcheckMetadata, node: str) -> None:
-    pass
+    metadata.insights.add(
+        Insight(
+            node=node,
+            source=Source.TOP,
+            qualifier=InsightQualifier.CHECK,
+            message="Checking the load averages",
+        )
+    )
+
+    avg_1m_load_average = sum(metadata.load_avg_1min[node]) / len(
+        metadata.load_avg_1min[node]
+    )
+    avg_15m_load_average = sum(metadata.load_avg_15min[node]) / len(
+        metadata.load_avg_15min[node]
+    )
+    total_cpu_count = metadata.total_cpu_count[node]
+
+    if avg_1m_load_average > total_cpu_count and avg_15m_load_average > total_cpu_count:
+        metadata.insights.add(
+            Insight(
+                node=node,
+                source=Source.TOP,
+                qualifier=InsightQualifier.INTERESTING,
+                message=f"Both 1-min load average ({avg_1m_load_average:.1f}) and 15-min load average ({avg_15m_load_average:.1f}) are higher than total CPU count ({total_cpu_count})",
+            )
+        )
