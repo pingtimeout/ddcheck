@@ -1,7 +1,7 @@
 import json
+import openai
 
 import pandas as pd
-import requests
 import streamlit as st
 from natsort import natsorted
 
@@ -137,35 +137,26 @@ else:
         chat_history = st.empty()
 
         if st.button("Send"):
-            response = requests.post(
-                "http://localhost:11434/v1/chat/completions",
-                json={
-                    "model": "deepseek-r1:32b",
-                    "messages": [
+            try:
+                completion = openai.ChatCompletion.create(
+                    model="deepseek-r1:32b",
+                    messages=[
                         {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_message},
+                        {"role": "user", "content": user_message}
                     ],
-                    "stream": True,
-                },
-                stream=True,
-            )
+                    stream=True
+                )
 
-            if response.status_code == 200:
                 chat_history.markdown(f"**You:** {user_message}")
                 chat_history.markdown("**Assistant:** ")
                 assistant_response = ""
-                for chunk in response.iter_lines():
-                    if chunk:
-                        chunk = chunk.decode("utf-8")
-                        if "data: " in chunk:
-                            data = chunk.split("data: ")[1]
-                            if data != "[DONE]":
-                                response_data = json.loads(data)
-                                assistant_response += response_data["choices"][0][
-                                    "delta"
-                                ]["content"]
-                                chat_history.markdown(
-                                    f"**Assistant:** {assistant_response}"
-                                )
-            else:
-                chat_history.markdown("Failed to get response from Ollama server.")
+
+                for chunk in completion:
+                    if hasattr(chunk.choices[0].delta, 'content'):
+                        content = chunk.choices[0].delta.content
+                        if content:
+                            assistant_response += content
+                            chat_history.markdown(f"**Assistant:** {assistant_response}")
+
+            except Exception as e:
+                chat_history.markdown(f"Failed to get response from OpenAI API: {str(e)}")
