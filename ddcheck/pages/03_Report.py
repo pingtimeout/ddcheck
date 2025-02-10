@@ -9,6 +9,23 @@ from ddcheck.storage.upload import write_metadata_to_disk
 
 
 def create_chat_box() -> None:
+    def display_chat_message(message: dict) -> None:
+        """Displays a chat message with potential handling for <think> tags."""
+        content = message["content"]
+        think_start = content.find("<think>")
+        if think_start != -1:
+            think_end = content.find("</think>")
+            if think_end != -1:
+                main_content = (
+                    content[:think_start] + content[think_end + len("</think>") :]
+                )
+                think_content = content[think_start + len("<think>") : think_end]
+                st.markdown(main_content)
+                with st.expander("Thoughts"):
+                    st.markdown(think_content)
+        else:
+            st.markdown(content)
+
     st.subheader("DDCheck Chat")
 
     client = OpenAI(
@@ -54,7 +71,7 @@ def create_chat_box() -> None:
     for message in st.session_state.messages:
         if message["role"] != "system":
             with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+                display_chat_message(message)
 
     # Accept user input
     if prompt := st.chat_input("Type anything to start the analysis"):
@@ -64,17 +81,22 @@ def create_chat_box() -> None:
             st.markdown(prompt)
 
         # Display assistant response in chat message container
+        full_response = ""
+        chat_message = None
         with st.chat_message("assistant"):
             stream = client.chat.completions.create(
-                model="deepseek-r1:8b",
+                model="deepseek-r1:32b",
                 messages=[
                     {"role": m["role"], "content": m["content"]}
                     for m in st.session_state.messages
                 ],
                 stream=True,
             )
-            response = st.write_stream(stream)
-        st.session_state.messages.append({"role": "assistant", "content": response})
+            full_response = st.write_stream(stream)
+        print(chat_message)
+        st.session_state.messages.append(
+            {"role": "assistant", "content": full_response}
+        )
 
 
 st.set_page_config(layout="wide")
