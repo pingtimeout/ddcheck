@@ -45,11 +45,13 @@ else:
                 status.write(f"{node_and_insights[0]}: {insight.message}")
 
     # Show a selector with all the nodes
-    selected_node = st.selectbox("Select a node", metadata.nodes)
+    st.markdown("### Node selection")
+    selected_node = st.selectbox("Select a Dremio node", natsorted(metadata.nodes))
 
     # Display the insights for the selected node
     if selected_node:
-        st.write("### Node-specific insights")
+        st.divider()
+        st.write("### Insights")
         labels_per_qualifier = {
             InsightQualifier.BAD: ("🔴"),
             InsightQualifier.INTERESTING: ("🟡"),
@@ -66,7 +68,8 @@ else:
                 for insight in insights:
                     st.write(f"* {selected_node}: {insight.message}")
 
-        st.subheader("Node-specific metrics")
+        st.divider()
+        st.subheader("Metrics")
 
         if selected_node in metadata.cpu_usage:
             st.write("#### CPU usage")
@@ -100,6 +103,7 @@ else:
                 use_container_width=True,
             )
 
+        st.divider()
         st.subheader("Interactive Chat with Ollama")
         system_prompt = (
             "You are a knowledgeable Software Engineer focusing on solving performance issues.  \n\n"
