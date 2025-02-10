@@ -67,8 +67,6 @@ else:
                 st.write(f"{labels_per_qualifier[qualifier]} **{qualifier.name}**")
                 for insight in insights:
                     st.write(f"* {selected_node}: {insight.message}")
-            else:
-                st.write(f"* {selected_node}: No insight")
 
         st.subheader("Node-specific metrics")
 
