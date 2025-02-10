@@ -7,12 +7,84 @@ from ddcheck.storage import DdcheckMetadata, InsightQualifier
 from ddcheck.storage.list import get_uploaded_metadata
 from ddcheck.storage.upload import write_metadata_to_disk
 
+
+def create_chat_box() -> None:
+    st.subheader("DDCheck Chat")
+
+    client = OpenAI(
+        base_url="http://localhost:11434/v1",
+        api_key="foo",
+    )
+
+    # Initialize the chat history with the system prompt and the user prompt containing all the insights
+    if "messages" not in st.session_state:
+        system_prompt = (
+            "You are a knowledgeable Software Engineer focusing on solving performance issues.  \n\n"
+            "You are provided with a list of facts that were observed on a given server.  "
+            "Your role is to help the user make sense out of these facts.  "
+            "You may recommend the user to run additional Linux CLI tools to further refine your analysis.  "
+            "Ensure that you only rely on standard Linux tools.\n\n"
+            ""
+            "The server you are analysing is running Dremio, a data lakehouse platform.  Dremio is written in Java but also contains native code run with JNI.\n\n"
+            ""
+            "The DCOTC is a proxy metric to quickly get an idea of where the biggest bottleneck in the system is.  "
+            "It comes from the JPDM methodology.\n "
+            "* When it is `System`, it means that the server is spending an abnormal amount of CPU time in kernel space, compared to the time spent in userspace.  The associated root cause issue usually is too many context switches (too many threads running), or too many small disk I/O operations, or too many network I/O operations.\n"
+            "* When it is `User`, it means that most of the CPU time is spent in user space.  The associated root cause issue usually is a too high GC overhead or an algorithmic issue in the Java code itself.\n"
+            "* When it is `None`, it means that something is preventing all CPUs from being fully utilized.  The associated root cause issue usually is too small thread pools, or a node that is not receiving enough workload."
+        )
+        initial_user_prompt = f"Narrow down the list of possible root causes for performance issues using the following facts for the node {selected_node}.\n"
+        for q in [
+            InsightQualifier.OK,
+            InsightQualifier.INTERESTING,
+            InsightQualifier.BAD,
+        ]:
+            initial_user_prompt += "".join(
+                f"* {i.message}\n"
+                for i in insights_per_qualifier_and_node.get(q, {}).get(
+                    selected_node, []
+                )
+            )
+        st.session_state.messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": initial_user_prompt},
+        ]
+
+    # Display chat messages from history on app rerun except the system prompt as it is too large
+    for message in st.session_state.messages:
+        if message["role"] != "system":
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+    # Accept user input
+    if prompt := st.chat_input("Type anything to start the analysis"):
+        # Add user message to chat history and display it in the chat message container
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        # Display assistant response in chat message container
+        with st.chat_message("assistant"):
+            stream = client.chat.completions.create(
+                model="deepseek-r1:8b",
+                messages=[
+                    {"role": m["role"], "content": m["content"]}
+                    for m in st.session_state.messages
+                ],
+                stream=True,
+            )
+            response = st.write_stream(stream)
+        st.session_state.messages.append({"role": "assistant", "content": response})
+
+
 st.set_page_config(layout="wide")
 
 if "ddcheck_id" not in st.session_state:
     st.switch_page("pages/01_Upload.py")
 
+
 metadata: DdcheckMetadata | None = get_uploaded_metadata(st.session_state.ddcheck_id)
+
 if metadata is None:
     st.switch_page("pages/01_Upload.py")
 else:
@@ -103,63 +175,4 @@ else:
                 use_container_width=True,
             )
 
-        st.divider()
-        st.subheader("Interactive Chat with Ollama")
-        system_prompt = (
-            "You are a knowledgeable Software Engineer focusing on solving performance issues.  \n\n"
-            "You are provided with a list of facts that were observed on a given server.  "
-            "Your role is to help the user make sense out of these facts.  "
-            "You may recommend the user to run additional Linux CLI tools to further refine your analysis.  "
-            "Ensure that you only rely on standard Linux tools.\n\n"
-            ""
-            "The server you are analysing is running Dremio, a data lakehouse platform.  Dremio is written in Java but also contains native code run with JNI.\n\n"
-            ""
-            "The DCOTC is a proxy metric to quickly get an idea of where the biggest bottleneck in the system is.  "
-            "It comes from the JPDM methodology.\n "
-            "* When it is `System`, it means that the server is spending an abnormal amount of CPU time in kernel space, compared to the time spent in userspace.  The associated root cause issue usually is too many context switches (too many threads running), or too many small disk I/O operations, or too many network I/O operations.\n"
-            "* When it is `User`, it means that most of the CPU time is spent in user space.  The associated root cause issue usually is a too high GC overhead or an algorithmic issue in the Java code itself.\n"
-            "* When it is `None`, it means that something is preventing all CPUs from being fully utilized.  The associated root cause issue usually is too small thread pools, or a node that is not receiving enough workload."
-        )
-        initial_user_prompt = (
-            f"Analyse the following facts for the node {selected_node}.  \n\n"
-        )
-        for q in [
-            InsightQualifier.OK,
-            InsightQualifier.INTERESTING,
-            InsightQualifier.BAD,
-        ]:
-            initial_user_prompt += "".join(
-                f"* {i.message}\n"
-                for i in insights_per_qualifier_and_node.get(q, {}).get(
-                    selected_node, []
-                )
-            )
-
-        user_message = st.text_area("You:", value=initial_user_prompt)
-        chat_history = st.empty()
-
-        client = OpenAI(
-            base_url="http://localhost:11434/v1",
-            api_key="foo",
-        )
-        if st.button("Send"):
-            try:
-                completion = client.chat.completions.create(
-                    model="deepseek-r1:8b",
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_message},
-                    ],
-                    stream=True,
-                )
-
-                chat_history.markdown(f"**You:** {user_message}")
-                assistant_content = ""
-                for chunk in completion:
-                    assistant_content += chunk.choices[0].delta.content or ""
-                    chat_history.markdown(f"**Assistant:** {assistant_content}")
-
-            except Exception as e:
-                chat_history.markdown(
-                    f"Failed to get response from OpenAI API: {str(e)}"
-                )
+        create_chat_box()
