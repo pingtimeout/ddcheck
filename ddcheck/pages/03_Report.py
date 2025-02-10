@@ -1,9 +1,7 @@
-import json
-import openai
-
 import pandas as pd
 import streamlit as st
 from natsort import natsorted
+from openai import OpenAI
 
 from ddcheck.storage import DdcheckMetadata, InsightQualifier
 from ddcheck.storage.list import get_uploaded_metadata
@@ -136,27 +134,28 @@ else:
         user_message = st.text_area("You:", value=initial_user_prompt)
         chat_history = st.empty()
 
+        client = OpenAI(
+            base_url="http://localhost:11434/v1",
+            api_key="foo",
+        )
         if st.button("Send"):
             try:
-                completion = openai.ChatCompletion.create(
-                    model="deepseek-r1:32b",
+                completion = client.chat.completions.create(
+                    model="deepseek-r1:8b",
                     messages=[
                         {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_message}
+                        {"role": "user", "content": user_message},
                     ],
-                    stream=True
+                    stream=True,
                 )
 
                 chat_history.markdown(f"**You:** {user_message}")
-                chat_history.markdown("**Assistant:** ")
-                assistant_response = ""
-
+                assistant_content = ""
                 for chunk in completion:
-                    if hasattr(chunk.choices[0].delta, 'content'):
-                        content = chunk.choices[0].delta.content
-                        if content:
-                            assistant_response += content
-                            chat_history.markdown(f"**Assistant:** {assistant_response}")
+                    assistant_content += chunk.choices[0].delta.content or ""
+                    chat_history.markdown(f"**Assistant:** {assistant_content}")
 
             except Exception as e:
-                chat_history.markdown(f"Failed to get response from OpenAI API: {str(e)}")
+                chat_history.markdown(
+                    f"Failed to get response from OpenAI API: {str(e)}"
+                )
