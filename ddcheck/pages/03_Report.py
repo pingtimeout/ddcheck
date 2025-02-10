@@ -20,9 +20,9 @@ def create_chat_box() -> None:
                     content[:think_start] + content[think_end + len("</think>") :]
                 )
                 think_content = content[think_start + len("<think>") : think_end]
-                st.markdown(main_content)
                 with st.expander("Thoughts"):
                     st.markdown(think_content)
+                st.markdown(main_content)
         else:
             st.markdown(content)
 
@@ -81,8 +81,6 @@ def create_chat_box() -> None:
             st.markdown(prompt)
 
         # Display assistant response in chat message container
-        full_response = ""
-        chat_message = None
         with st.chat_message("assistant"):
             stream = client.chat.completions.create(
                 model="deepseek-r1:32b",
@@ -93,10 +91,10 @@ def create_chat_box() -> None:
                 stream=True,
             )
             full_response = st.write_stream(stream)
-        print(chat_message)
         st.session_state.messages.append(
             {"role": "assistant", "content": full_response}
         )
+        st.rerun()
 
 
 st.set_page_config(layout="wide")
