@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.13"
 streamlit = "^1.42.0"
 natsort = "^8.4.0"
+openai = "^1.61.1"
 
 [tool.isort]
 profile = "black"
