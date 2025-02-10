@@ -21,7 +21,7 @@ else:
         with col1:
             st.title(f"Report for {metadata.original_filename}")
         with col2:
-            if st.button("Rerun analysis"):
+            if st.button("Rerun analysis", use_container_width=True):
                 metadata.reset()
                 write_metadata_to_disk(metadata)
                 st.switch_page("pages/02_Analysis.py")
