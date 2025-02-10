@@ -156,12 +156,16 @@ else:
                 assistant_response = ""
                 for chunk in response.iter_lines():
                     if chunk:
-                        chunk = chunk.decode('utf-8')
-                        if 'data: ' in chunk:
-                            data = chunk.split('data: ')[1]
-                            if data != '[DONE]':
+                        chunk = chunk.decode("utf-8")
+                        if "data: " in chunk:
+                            data = chunk.split("data: ")[1]
+                            if data != "[DONE]":
                                 response_data = json.loads(data)
-                                assistant_response += response_data['choices'][0]['delta']['content']
-                                chat_history.markdown(f"**Assistant:** {assistant_response}")
+                                assistant_response += response_data["choices"][0][
+                                    "delta"
+                                ]["content"]
+                                chat_history.markdown(
+                                    f"**Assistant:** {assistant_response}"
+                                )
             else:
                 chat_history.markdown("Failed to get response from Ollama server.")
